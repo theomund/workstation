@@ -1,0 +1,56 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+---
+version: "3"
+
+tasks:
+  install:
+    desc: Build installation ISO image.
+    vars:
+      SOURCE: src/iso/install
+      CONFIG: "{{.SOURCE}}/config.toml"
+      TARGET: target/iso/install
+      ISO: "{{.TARGET}}/workstation-{{.VERSION}}-{{.RELEASE}}-install.iso"
+      ROOT: "{{.TARGET}}/root"
+    sources:
+      - "{{.CONFIG}}"
+    generates:
+      - "{{.ISO}}"
+    deps:
+      - :container
+    cmds:
+      - mkdir -p {{.ROOT}}
+      - podman-remote run
+        --privileged
+        --rm
+        -v /var/lib/containers/storage:/var/lib/containers/storage
+        -v $WORKSPACE_PATH/{{.CONFIG}}:/config.toml
+        -v $WORKSPACE_PATH/{{.ROOT}}:/output
+        ghcr.io/osbuild/image-builder:v84.0.0
+        build
+        --blueprint /config.toml
+        --bootc-installer-payload-ref {{.REGISTRY}}/payload:latest
+        --bootc-ref {{.REGISTRY}}/installer:latest
+        --output-dir /output
+        bootc-installer
+      - cp {{.ROOT}}/bootc-almalinux-*-bootc-installer-x86_64.iso {{.ISO}}
+
+  upgrade:
+    desc: Build upgrade ISO image.
+    vars:
+      SOURCE: src/iso/upgrade
+      TARGET: target/iso/upgrade
+      ISO: "{{.TARGET}}/workstation-{{.VERSION}}-{{.RELEASE}}-upgrade.iso"
+      ROOT: "{{.TARGET}}/root"
+    sources:
+      - "{{.SOURCE}}/upgrade.sh"
+    generates:
+      - "{{.ISO}}"
+    deps:
+      - :payload:container
+    cmds:
+      - mkdir -p {{.ROOT}}
+      - cp -r {{.SOURCE}} target/payload/container {{.ROOT}}
+      - mkisofs -R -J -o {{.ISO}} {{.ROOT}}

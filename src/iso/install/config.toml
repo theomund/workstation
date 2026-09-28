@@ -1,0 +1,19 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+[customizations.installer.kickstart]
+contents = """
+text --non-interactive
+zerombr
+clearpart --all --initlabel --disklabel=gpt
+autopart --nohome --type=lvm
+network --bootproto=dhcp --device=link --activate --onboot=on
+xconfig --startxonboot
+reboot --eject
+"""
+
+[customizations.installer.modules]
+disable = [
+  "org.fedoraproject.Anaconda.Modules.Users"
+]

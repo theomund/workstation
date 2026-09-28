@@ -1,0 +1,78 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+---
+version: "3"
+
+includes:
+  common:
+    taskfile: src/helper/Taskfile.yaml
+    vars:
+      BASE: quay.io/almalinuxorg/almalinux-bootc:10.2-20260926
+      COMPONENT: common
+  installer:
+    taskfile: src/helper/Taskfile.yaml
+    vars:
+      BASE: "{{.COMMON}}"
+      COMPONENT: installer
+  iso:
+    taskfile: src/iso/Taskfile.yaml
+  payload:
+    taskfile: src/helper/Taskfile.yaml
+    vars:
+      BASE: "{{.COMMON}}"
+      COMPONENT: payload
+
+dotenv: [".env"]
+
+run: when_changed
+
+vars:
+  REGISTRY: ghcr.io/theomund/workstation
+  VERSION: 0.1.0
+  RELEASE: 1
+  COMMON: "{{.REGISTRY}}/common:{{.VERSION}}-{{.RELEASE}}"
+
+tasks:
+  ci:
+    desc: Run CI/CD pipeline.
+    deps:
+      - iso
+
+  clean:
+    desc: Clean the project.
+    cmds:
+      - git clean -fdxe '.env'
+
+  container:
+    desc: Build all container images.
+    deps:
+      - installer:container
+      - payload:container
+
+  default:
+    desc: Print project tasks.
+    silent: true
+    cmds:
+      - task -l
+
+  iso:
+    desc: Build all ISO images.
+    deps:
+      - iso:install
+      - iso:upgrade
+
+  rootfs:
+    desc: Build all root filesystem archives.
+    deps:
+      - common:rootfs
+      - installer:rootfs
+      - payload:rootfs
+
+  rpm:
+    desc: Build all RPM packages.
+    deps:
+      - common:rpm
+      - installer:rpm
+      - payload:rpm
