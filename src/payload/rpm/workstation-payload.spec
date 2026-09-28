@@ -10,9 +10,11 @@ License: MPL-2.0
 BuildArch: noarch
 Source0: %{name}-%{_version}-%{_release}-rootfs.tar.gz
 Requires: code
+Requires: firefox
 Requires: nvidia-driver
 Requires: nvidia-driver-cuda
 Requires: nvidia-open-kmod
+Requires: thunderbird
 
 %description
 %{summary}

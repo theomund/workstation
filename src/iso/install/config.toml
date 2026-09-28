@@ -10,4 +10,10 @@ clearpart --all --initlabel --disklabel=gpt
 autopart --nohome --type=lvm
 network --bootproto=dhcp --device=link --activate --onboot=on
 xconfig --startxonboot
+reboot --eject
 """
+
+[customizations.installer.modules]
+disable = [
+  "org.fedoraproject.Anaconda.Modules.Users"
+]
