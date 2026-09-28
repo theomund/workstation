@@ -14,14 +14,14 @@ includes:
   installer:
     taskfile: src/helper/Taskfile.yaml
     vars:
-      BASE: "{{.REGISTRY}}/common:{{.VERSION}}-{{.RELEASE}}"
+      BASE: "{{.COMMON}}"
       COMPONENT: installer
   iso:
     taskfile: src/iso/Taskfile.yaml
   payload:
     taskfile: src/helper/Taskfile.yaml
     vars:
-      BASE: "{{.REGISTRY}}/common:{{.VERSION}}-{{.RELEASE}}"
+      BASE: "{{.COMMON}}"
       COMPONENT: payload
 
 dotenv: [".env"]
@@ -32,6 +32,7 @@ vars:
   REGISTRY: ghcr.io/theomund/workstation
   VERSION: 0.1.0
   RELEASE: 1
+  COMMON: "{{.REGISTRY}}/common:{{.VERSION}}-{{.RELEASE}}"
 
 tasks:
   ci:

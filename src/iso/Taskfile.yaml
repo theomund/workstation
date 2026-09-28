@@ -9,9 +9,11 @@ tasks:
   install:
     desc: Build installation ISO image.
     vars:
-      CONFIG: src/iso/install/config.toml
-      ISO: target/iso/install/workstation-{{.VERSION}}-{{.RELEASE}}-install.iso
-      ROOT: target/iso/install/root
+      SOURCE: src/iso/install
+      CONFIG: "{{.SOURCE}}/config.toml"
+      TARGET: target/iso/install
+      ISO: "{{.TARGET}}/workstation-{{.VERSION}}-{{.RELEASE}}-install.iso"
+      ROOT: "{{.TARGET}}/root"
     sources:
       - "{{.CONFIG}}"
     generates:
@@ -38,16 +40,17 @@ tasks:
   upgrade:
     desc: Build upgrade ISO image.
     vars:
-      ISO: target/iso/upgrade/workstation-{{.VERSION}}-{{.RELEASE}}-upgrade.iso
-      ROOT: target/iso/upgrade/root
-      SOURCE: src/iso/upgrade/*
+      SOURCE: src/iso/upgrade
+      TARGET: target/iso/upgrade
+      ISO: "{{.TARGET}}/workstation-{{.VERSION}}-{{.RELEASE}}-upgrade.iso"
+      ROOT: "{{.TARGET}}/root"
     sources:
-      - "{{.SOURCE}}"
+      - "{{.SOURCE}}/upgrade.sh"
     generates:
       - "{{.ISO}}"
     deps:
       - :payload:container
     cmds:
-      - mkdir -p {{.TARGET}}
+      - mkdir -p {{.ROOT}}
       - cp -r {{.SOURCE}} target/payload/container {{.ROOT}}
       - mkisofs -R -J -o {{.ISO}} {{.ROOT}}
