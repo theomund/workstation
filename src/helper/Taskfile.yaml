@@ -1,0 +1,67 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+---
+version: "3"
+
+vars:
+  SOURCE: src/{{.COMPONENT}}
+  TARGET: target/{{.COMPONENT}}
+  CONTAINER: "{{.TARGET}}/container"
+  ROOTFS: "{{.TARGET}}/rootfs/workstation-{{.COMPONENT}}-{{.VERSION}}-{{.RELEASE}}-rootfs.tar.gz"
+  RPM: "{{.TARGET}}/rpm/root/RPMS/noarch/workstation-{{.COMPONENT}}-{{.VERSION}}-{{.RELEASE}}.el10.noarch.rpm"
+
+tasks:
+  container:
+    desc: Build {{.COMPONENT}} container.
+    vars:
+      CONTAINERFILE: "{{.SOURCE}}/container/Containerfile"
+      TAG: "{{.REGISTRY}}/{{.COMPONENT}}:{{.VERSION}}-{{.RELEASE}}"
+    sources:
+      - "{{.CONTAINERFILE}}"
+      - "{{.RPM}}"
+    generates:
+      - "{{.CONTAINER}}/index.json"
+    deps:
+      - rpm
+    cmds:
+      - task: :common:container
+        if: '{{ ne .COMPONENT "common" }}'
+      - podman-remote build --build-arg BASE={{.BASE}} -f {{.CONTAINERFILE}} -t {{.TAG}} .
+      - podman-remote save --format oci-dir -o {{.CONTAINER}} {{.TAG}}
+
+  rootfs:
+    desc: Build {{.COMPONENT}} root filesystem archive.
+    vars:
+      FILES: "{{.SOURCE}}/rootfs"
+    sources:
+      - "{{.FILES}}/**/*"
+    generates:
+      - "{{.ROOTFS}}"
+    cmds:
+      - mkdir -p {{.TARGET}}/rootfs
+      - tar --exclude '.gitkeep' -czvf {{.ROOTFS}} -C {{.FILES}} .
+
+  rpm:
+    desc: Build {{.COMPONENT}} RPM package.
+    vars:
+      ROOT: "{{.TARGET}}/rpm/root"
+      SPEC: "{{.SOURCE}}/rpm/workstation-{{.COMPONENT}}.spec"
+      SOURCES: "{{.ROOT}}/SOURCES"
+    sources:
+      - "{{.ROOTFS}}"
+      - "{{.SPEC}}"
+    generates:
+      - "{{.RPM}}"
+    deps:
+      - rootfs
+    cmds:
+      - mkdir -p {{.SOURCES}}
+      - cp {{.ROOTFS}} {{.SOURCES}}
+      - rpmbuild
+        -bb
+        --define "_version {{.VERSION}}"
+        --define "_release {{.RELEASE}}"
+        --define "_topdir $(pwd)/{{.ROOT}}"
+        {{.SPEC}}

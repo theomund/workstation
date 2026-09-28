@@ -9,11 +9,14 @@
   "build": {
     "dockerfile": "Containerfile"
   },
+  "containerEnv": {
+    "WORKSPACE_PATH": "${localWorkspaceFolder}"
+  },
   "customizations": {
     "vscode": {
       "extensions": [
         "ms-azuretools.vscode-containers",
-        "ms-vscode.makefile-tools"
+        "task.vscode-task"
       ]
     }
   },

@@ -1,0 +1,14 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+ARG BASE
+
+FROM ${BASE}
+RUN --mount=type=bind,source=target/payload/rpm/root/RPMS/noarch,target=/tmp/RPMS,z \
+    --mount=type=tmpfs,target=/run \
+    --mount=type=tmpfs,target=/var/cache \
+    --mount=type=tmpfs,target=/var/lib \
+    --mount=type=tmpfs,target=/var/log \
+    dnf install -y @workstation-product-environment /tmp/RPMS/*.rpm
+RUN bootc container lint --fatal-warnings
