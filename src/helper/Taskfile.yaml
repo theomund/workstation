@@ -6,16 +6,21 @@
 version: "3"
 
 vars:
+  PREFIX: workstation-{{.COMPONENT}}-{{.VERSION}}-{{.RELEASE}}
   SOURCE: src/{{.COMPONENT}}
   TARGET: target/{{.COMPONENT}}
   CONTAINER: "{{.TARGET}}/container"
-  ROOTFS: "{{.TARGET}}/rootfs/workstation-{{.COMPONENT}}-{{.VERSION}}-{{.RELEASE}}-rootfs.tar.gz"
-  RPM: "{{.TARGET}}/rpm/root/RPMS/noarch/workstation-{{.COMPONENT}}-{{.VERSION}}-{{.RELEASE}}.el10.noarch.rpm"
+  CVE: "{{.TARGET}}/cve/{{.PREFIX}}-cve.txt"
+  ROOTFS: "{{.TARGET}}/rootfs/{{.PREFIX}}-rootfs.tar.gz"
+  RPM: "{{.TARGET}}/rpm/{{.PREFIX}}.el10.x86_64.rpm"
+  SBOM: "{{.TARGET}}/sbom/{{.PREFIX}}-sbom.json"
+  SRPM: "{{.TARGET}}/srpm/{{.PREFIX}}.el10.src.rpm"
 
 tasks:
   container:
     desc: Build {{.COMPONENT}} container.
     vars:
+      BASE: "{{.REGISTRY}}/common:{{.VERSION}}-{{.RELEASE}}"
       CONTAINERFILE: "{{.SOURCE}}/container/Containerfile"
       TAG: "{{.REGISTRY}}/{{.COMPONENT}}:{{.VERSION}}-{{.RELEASE}}"
     sources:
@@ -28,8 +33,26 @@ tasks:
     cmds:
       - task: :common:container
         if: '{{ ne .COMPONENT "common" }}'
-      - podman-remote build --build-arg BASE={{.BASE}} -f {{.CONTAINERFILE}} -t {{.TAG}} .
+      - podman-remote build
+        {{if ne .COMPONENT "common"}}--build-arg BASE={{.BASE}}{{end}}
+        -f {{.CONTAINERFILE}}
+        -t {{.TAG}}
+        .
       - podman-remote save --format oci-dir -o {{.CONTAINER}} {{.TAG}}
+
+  cve:
+    desc: Build {{.COMPONENT}} CVE table.
+    env:
+      NO_COLOR: "1"
+    sources:
+      - "{{.SBOM}}"
+    generates:
+      - "{{.CVE}}"
+    deps:
+      - :db
+      - sbom
+    cmds:
+      - grype sbom:{{.SBOM}} -o table={{.CVE}}
 
   rootfs:
     desc: Build {{.COMPONENT}} root filesystem archive.
@@ -47,21 +70,48 @@ tasks:
     desc: Build {{.COMPONENT}} RPM package.
     vars:
       ROOT: "{{.TARGET}}/rpm/root"
-      SPEC: "{{.SOURCE}}/rpm/workstation-{{.COMPONENT}}.spec"
+    sources:
+      - "{{.SRPM}}"
+    generates:
+      - "{{.RPM}}"
+    deps:
+      - srpm
+    cmds:
+      - mkdir -p {{.ROOT}}
+      - defer: rm -rf {{.ROOT}}
+      - rpmbuild --define "_topdir $(pwd)/{{.ROOT}}" --rebuild {{.SRPM}}
+      - cp {{.ROOT}}/RPMS/x86_64/*.rpm {{.TARGET}}/rpm
+
+  srpm:
+    desc: Build {{.COMPONENT}} SRPM package.
+    vars:
+      ROOT: "{{.TARGET}}/srpm/root"
+      SPEC: "{{.SOURCE}}/srpm/workstation-{{.COMPONENT}}.spec"
       SOURCES: "{{.ROOT}}/SOURCES"
     sources:
       - "{{.ROOTFS}}"
       - "{{.SPEC}}"
     generates:
-      - "{{.RPM}}"
+      - "{{.SRPM}}"
     deps:
+      - :macros
       - rootfs
     cmds:
       - mkdir -p {{.SOURCES}}
+      - defer: rm -rf {{.ROOT}}
       - cp {{.ROOTFS}} {{.SOURCES}}
-      - rpmbuild
-        -bb
-        --define "_version {{.VERSION}}"
-        --define "_release {{.RELEASE}}"
-        --define "_topdir $(pwd)/{{.ROOT}}"
-        {{.SPEC}}
+      - rpmbuild --define "_topdir $(pwd)/{{.ROOT}}" -bs {{.SPEC}}
+      - cp {{.ROOT}}/SRPMS/*.src.rpm {{.TARGET}}/srpm
+
+  sbom:
+    desc: Build {{.COMPONENT}} SBOM file.
+    env:
+      SYFT_GOLANG_CAPTURE_SYMBOLS: all
+    sources:
+      - "{{.CONTAINER}}/index.json"
+    generates:
+      - "{{.SBOM}}"
+    deps:
+      - container
+    cmds:
+      - syft oci-dir:{{.CONTAINER}} -o syft-json={{.SBOM}}

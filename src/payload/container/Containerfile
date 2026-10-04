@@ -5,7 +5,7 @@
 ARG BASE
 
 FROM ${BASE}
-RUN --mount=type=bind,source=target/payload/rpm/root/RPMS/noarch,target=/tmp/RPMS,z \
+RUN --mount=type=bind,source=target/payload/rpm,target=/tmp/RPMS,z \
     --mount=type=tmpfs,target=/run \
     --mount=type=tmpfs,target=/var/cache \
     --mount=type=tmpfs,target=/var/lib \

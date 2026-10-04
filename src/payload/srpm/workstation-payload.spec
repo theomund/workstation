@@ -2,15 +2,19 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-Name: workstation-common
+Name: workstation-payload
 Version: %{_version}
 Release: %{_release}%{?dist}
-Summary: Common component of workstation image.
+Summary: Payload component of workstation image.
 License: MPL-2.0
-BuildArch: noarch
+ExclusiveArch: x86_64
 Source0: %{name}-%{_version}-%{_release}-rootfs.tar.gz
-Requires: almalinux-release-nvidia-driver
-Requires: tmux
+Requires: code
+Requires: firefox
+Requires: nvidia-driver
+Requires: nvidia-driver-cuda
+Requires: nvidia-open-kmod
+Requires: thunderbird
 
 %description
 %{summary}
@@ -19,7 +23,8 @@ Requires: tmux
 tar xzvf %{SOURCE0} -C %{buildroot}
 
 %files
-%{_sysconfdir}/yum.repos.d/%{name}.repo
+%{_sysusersdir}/%{name}.conf
+%{_tmpfilesdir}/%{name}.conf
 
 %changelog
 * Sun Sep 27 2026 Theomund <34360334+theomund@users.noreply.github.com> - 0.1.0-1

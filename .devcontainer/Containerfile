@@ -2,13 +2,15 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-FROM quay.io/almalinuxorg/almalinux:10.2-20260902
+FROM quay.io/almalinuxorg/almalinux:10.2-20261002
 RUN --mount=type=tmpfs,target=/var/cache \
     dnf install -y \
     bash-completion-2.11 \
     git-2.52.0 \
     gnupg2-2.4.5 \
-    https://github.com/go-task/task/releases/download/v3.53.1/task_3.53.1_linux_amd64.rpm \
+    https://github.com/anchore/grype/releases/download/v0.120.0/grype_0.120.0_linux_amd64.rpm \
+    https://github.com/anchore/syft/releases/download/v1.54.0/syft_1.54.0_linux_amd64.rpm \
+    https://github.com/go-task/task/releases/download/v3.54.0/task_3.54.0_linux_amd64.rpm \
     podman-remote-5.8.2 \
     rpmdevtools-9.6 \
     xorriso-1.5.6

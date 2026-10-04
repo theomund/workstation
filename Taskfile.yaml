@@ -9,30 +9,28 @@ includes:
   common:
     taskfile: src/helper/Taskfile.yaml
     vars:
-      BASE: quay.io/almalinuxorg/almalinux-bootc:10.2-20260926
       COMPONENT: common
   installer:
     taskfile: src/helper/Taskfile.yaml
     vars:
-      BASE: "{{.COMMON}}"
       COMPONENT: installer
   iso:
     taskfile: src/iso/Taskfile.yaml
   payload:
     taskfile: src/helper/Taskfile.yaml
     vars:
-      BASE: "{{.COMMON}}"
       COMPONENT: payload
 
 dotenv: [".env"]
 
 run: when_changed
 
-vars:
-  REGISTRY: ghcr.io/theomund/workstation
+env:
   VERSION: 0.1.0
   RELEASE: 1
-  COMMON: "{{.REGISTRY}}/common:{{.VERSION}}-{{.RELEASE}}"
+
+vars:
+  REGISTRY: ghcr.io/theomund/workstation
 
 tasks:
   ci:
@@ -51,6 +49,18 @@ tasks:
       - installer:container
       - payload:container
 
+  cve:
+    desc: Build all CVE tables.
+    deps:
+      - common:cve
+      - installer:cve
+      - payload:cve
+
+  db:
+    desc: Update CVE database.
+    cmds:
+      - grype db update
+
   default:
     desc: Print project tasks.
     silent: true
@@ -62,6 +72,18 @@ tasks:
     deps:
       - iso:install
       - iso:upgrade
+
+  macros:
+    desc: Setup RPM macros.
+    vars:
+      SOURCE: .rpmmacros
+      TARGET: /home/developer/{{.SOURCE}}
+    sources:
+      - "{{.SOURCE}}"
+    generates:
+      - "{{.TARGET}}"
+    cmds:
+      - ln -frs {{.SOURCE}} {{.TARGET}}
 
   rootfs:
     desc: Build all root filesystem archives.
@@ -76,3 +98,17 @@ tasks:
       - common:rpm
       - installer:rpm
       - payload:rpm
+
+  sbom:
+    desc: Build all SBOM files.
+    deps:
+      - common:sbom
+      - installer:sbom
+      - payload:sbom
+
+  srpm:
+    desc: Build all SRPM packages.
+    deps:
+      - common:srpm
+      - installer:srpm
+      - payload:srpm

@@ -7,7 +7,7 @@ Version: %{_version}
 Release: %{_release}%{?dist}
 Summary: Installer component of workstation image.
 License: MPL-2.0
-BuildArch: noarch
+ExclusiveArch: x86_64
 Source0: %{name}-%{_version}-%{_release}-rootfs.tar.gz
 Requires: anaconda
 Requires: anaconda-dracut

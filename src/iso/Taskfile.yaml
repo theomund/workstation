@@ -22,20 +22,21 @@ tasks:
       - :container
     cmds:
       - mkdir -p {{.ROOT}}
+      - defer: rm -rf {{.ROOT}}
       - podman-remote run
         --privileged
         --rm
         -v /var/lib/containers/storage:/var/lib/containers/storage
         -v $WORKSPACE_PATH/{{.CONFIG}}:/config.toml
         -v $WORKSPACE_PATH/{{.ROOT}}:/output
-        ghcr.io/osbuild/image-builder:v84.0.0
+        ghcr.io/osbuild/image-builder:v85.0.0
         build
         --blueprint /config.toml
         --bootc-installer-payload-ref {{.REGISTRY}}/payload:latest
         --bootc-ref {{.REGISTRY}}/installer:latest
         --output-dir /output
         bootc-installer
-      - cp {{.ROOT}}/bootc-almalinux-*-bootc-installer-x86_64.iso {{.ISO}}
+      - cp {{.ROOT}}/*.iso {{.ISO}}
 
   upgrade:
     desc: Build upgrade ISO image.
@@ -52,5 +53,6 @@ tasks:
       - :payload:container
     cmds:
       - mkdir -p {{.ROOT}}
+      - defer: rm -rf {{.ROOT}}
       - cp -r {{.SOURCE}} target/payload/container {{.ROOT}}
       - mkisofs -R -J -o {{.ISO}} {{.ROOT}}
