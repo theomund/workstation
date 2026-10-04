@@ -1,0 +1,26 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+{
+  "name": "workstation",
+  "build": {
+    "dockerfile": "Containerfile"
+  },
+  "containerEnv": {
+    "WORKSPACE_PATH": "${localWorkspaceFolder}"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-azuretools.vscode-containers",
+        "task.vscode-task"
+      ]
+    }
+  },
+  "mounts": [
+    "source=/var/run/podman/podman.sock,target=/var/run/podman/podman.sock,type=bind"
+  ]
+}

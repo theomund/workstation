@@ -1,0 +1,129 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+---
+version: "3"
+
+includes:
+  common:
+    taskfile: src/helper/Taskfile.yaml
+    vars:
+      COMPONENT: common
+  installer:
+    taskfile: src/helper/Taskfile.yaml
+    vars:
+      COMPONENT: installer
+  iso:
+    taskfile: src/iso/Taskfile.yaml
+  payload:
+    taskfile: src/helper/Taskfile.yaml
+    vars:
+      COMPONENT: payload
+
+dotenv: [".env"]
+
+run: when_changed
+
+env:
+  VERSION: 0.1.0
+  RELEASE: 1
+
+vars:
+  REGISTRY: ghcr.io/theomund/workstation
+
+tasks:
+  ci:
+    desc: Run CI/CD pipeline.
+    deps:
+      - iso
+
+  clean:
+    desc: Clean the project.
+    cmds:
+      - git clean -fdxe '.env'
+
+  container:
+    desc: Build all container images.
+    deps:
+      - installer:container
+      - payload:container
+
+  cve:
+    desc: Build all CVE tables.
+    deps:
+      - common:cve
+      - installer:cve
+      - payload:cve
+
+  db:
+    desc: Update CVE database.
+    cmds:
+      - grype db update
+
+  default:
+    desc: Print project tasks.
+    silent: true
+    cmds:
+      - task -l
+
+  iso:
+    desc: Build all ISO images.
+    deps:
+      - iso:install
+      - iso:upgrade
+
+  lint:
+    desc: Lint the source code.
+    deps:
+      - lint:rpmlint
+      - lint:shellcheck
+      - lint:yamllint
+
+  lint:rpmlint:
+    desc: Lint the SRPM packages.
+    deps:
+      - srpm
+    cmds:
+      - rpmlint target/**/*.src.rpm
+
+  lint:shellcheck:
+    desc: Lint the shell scripts.
+    cmds:
+      - find . -type f -exec file -i {} +
+        | grep shell
+        | cut -d':' -f1
+        | xargs shellcheck
+
+  lint:yamllint:
+    desc: Lint the YAML files.
+    cmds:
+      - yamllint .
+
+  rootfs:
+    desc: Build all root filesystem archives.
+    deps:
+      - common:rootfs
+      - installer:rootfs
+      - payload:rootfs
+
+  rpm:
+    desc: Build all RPM packages.
+    deps:
+      - common:rpm
+      - installer:rpm
+      - payload:rpm
+
+  sbom:
+    desc: Build all SBOM files.
+    deps:
+      - common:sbom
+      - installer:sbom
+      - payload:sbom
+
+  srpm:
+    desc: Build all SRPM packages.
+    deps:
+      - common:srpm
+      - installer:srpm
+      - payload:srpm
