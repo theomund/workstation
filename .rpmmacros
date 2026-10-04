@@ -1,2 +1,0 @@
-%_release %{getenv:RELEASE}
-%_version %{getenv:VERSION}
