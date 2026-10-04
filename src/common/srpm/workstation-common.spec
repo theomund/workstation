@@ -5,10 +5,11 @@
 Name: workstation-common
 Version: %{_version}
 Release: %{_release}%{?dist}
-Summary: Common component of workstation image.
+Summary: Common component of workstation image
 License: MPL-2.0
 ExclusiveArch: x86_64
-Source0: %{name}-%{_version}-%{_release}-rootfs.tar.gz
+URL: https://github.com/theomund/workstation
+Source0: file://%{name}-%{_version}-%{_release}-rootfs.tar.gz
 Requires: almalinux-release-nvidia-driver
 Requires: rpmfusion-free-release
 Requires: rpmfusion-nonfree-release
@@ -17,10 +18,17 @@ Requires: tmux
 %description
 %{summary}
 
+%prep
+
+%build
+
+%check
+
 %install
 tar xzvf %{SOURCE0} -C %{buildroot}
 
 %files
+%{_sysconfdir}/localtime
 %{_sysconfdir}/yum.repos.d/%{name}.repo
 
 %changelog

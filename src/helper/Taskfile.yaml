@@ -22,6 +22,7 @@ tasks:
     vars:
       BASE: "{{.REGISTRY}}/common:{{.VERSION}}-{{.RELEASE}}"
       CONTAINERFILE: "{{.SOURCE}}/container/Containerfile"
+      STORAGE: /var/lib/containers
       TAG: "{{.REGISTRY}}/{{.COMPONENT}}:{{.VERSION}}-{{.RELEASE}}"
     sources:
       - "{{.CONTAINERFILE}}"
@@ -32,12 +33,22 @@ tasks:
       - rpm
     cmds:
       - task: :common:container
-        if: '{{ ne .COMPONENT "common" }}'
+        if: '{{ne .COMPONENT "common"}}'
       - podman-remote build
         {{if ne .COMPONENT "common"}}--build-arg BASE={{.BASE}}{{end}}
         -f {{.CONTAINERFILE}}
         -t {{.TAG}}
         .
+      - cmd: podman-remote run
+             --privileged
+             --rm
+             -v {{.STORAGE}}:{{.STORAGE}}
+             {{.TAG}}
+             /usr/libexec/bootc-base-imagectl
+             rechunk
+             {{.TAG}}
+             {{.TAG}}
+        if: '{{eq .COMPONENT "payload"}}'
       - podman-remote save --format oci-dir -o {{.CONTAINER}} {{.TAG}}
 
   cve:

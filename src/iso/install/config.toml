@@ -6,6 +6,7 @@
 contents = """
 text --non-interactive
 zerombr
+ignoredisk --only-use=nvme0n1
 clearpart --all --initlabel --disklabel=gpt
 reqpart --add-boot
 part pv.01 --fstype="lvmpv" --size=1 --grow

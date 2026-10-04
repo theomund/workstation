@@ -73,6 +73,33 @@ tasks:
       - iso:install
       - iso:upgrade
 
+  lint:
+    desc: Lint the source code.
+    deps:
+      - lint:rpmlint
+      - lint:shellcheck
+      - lint:yamllint
+
+  lint:rpmlint:
+    desc: Lint the SRPM packages.
+    deps:
+      - srpm
+    cmds:
+      - rpmlint target/**/*.src.rpm
+
+  lint:shellcheck:
+    desc: Lint the shell scripts.
+    cmds:
+      - find . -type f -exec file -i {} +
+        | grep shell
+        | cut -d':' -f1
+        | xargs shellcheck
+
+  lint:yamllint:
+    desc: Lint the YAML files.
+    cmds:
+      - yamllint .
+
   rootfs:
     desc: Build all root filesystem archives.
     deps:

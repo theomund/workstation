@@ -38,8 +38,10 @@ tasks:
         ghcr.io/osbuild/image-builder:v85.0.0
         build
         --blueprint /config.toml
-        --bootc-installer-payload-ref {{.REGISTRY}}/payload:{{.VERSION}}-{{.RELEASE}}
-        --bootc-ref {{.REGISTRY}}/installer:{{.VERSION}}-{{.RELEASE}}
+        --bootc-installer-payload-ref
+        {{.REGISTRY}}/payload:{{.VERSION}}-{{.RELEASE}}
+        --bootc-ref
+        {{.REGISTRY}}/installer:{{.VERSION}}-{{.RELEASE}}
         --output-dir /output
         bootc-installer
       - cp {{.ROOT}}/*.iso {{.ISO}}
