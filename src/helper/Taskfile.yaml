@@ -94,7 +94,6 @@ tasks:
     generates:
       - "{{.SRPM}}"
     deps:
-      - :macros
       - rootfs
     cmds:
       - mkdir -p {{.SOURCES}}

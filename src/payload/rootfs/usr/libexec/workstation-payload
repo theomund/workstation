@@ -1,0 +1,26 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+#!/bin/sh
+
+set -eu
+
+log_message() {
+  echo "$1"
+
+  if plymouth --ping; then
+    plymouth display-message --text="$1"
+  fi
+}
+
+install_flatpaks() {
+  log_message "Installing Flatpak applications."
+  flatpak preinstall -y --noninteractive
+}
+
+main() {
+  install_flatpaks
+}
+
+main "$@"

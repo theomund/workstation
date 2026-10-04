@@ -9,7 +9,11 @@ Summary: Payload component of workstation image.
 License: MPL-2.0
 ExclusiveArch: x86_64
 Source0: %{name}-%{_version}-%{_release}-rootfs.tar.gz
+Obsoletes: PackageKit-command-not-found <= 2.0.0
+Requires: cockpit-machines
 Requires: code
+Requires: ffmpeg
+Requires: ffmpeg-libs
 Requires: firefox
 Requires: nvidia-driver
 Requires: nvidia-driver-cuda
@@ -22,9 +26,20 @@ Requires: thunderbird
 %install
 tar xzvf %{SOURCE0} -C %{buildroot}
 
+%post
+%systemd_post workstation-payload.service
+
 %files
+%{_datadir}/flatpak/preinstall.d/%{name}.preinstall
+%{_datadir}/flatpak/remotes.d/%{name}.flatpakrepo
+%{_libdir}/firefox/distribution/policies.json
+%{_libexecdir}/%{name}
+%{_presetdir}/10-%{name}.preset
 %{_sysusersdir}/%{name}.conf
 %{_tmpfilesdir}/%{name}.conf
+%{_unitdir}/%{name}.service
+%{_unitdir}/mcelog.service.d/10-%{name}.conf
+%{_unitdir}/nvidia-persistenced.service.d/10-%{name}.conf
 
 %changelog
 * Sun Sep 27 2026 Theomund <34360334+theomund@users.noreply.github.com> - 0.1.0-1

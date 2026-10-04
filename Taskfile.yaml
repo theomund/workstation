@@ -73,18 +73,6 @@ tasks:
       - iso:install
       - iso:upgrade
 
-  macros:
-    desc: Setup RPM macros.
-    vars:
-      SOURCE: .rpmmacros
-      TARGET: /home/developer/{{.SOURCE}}
-    sources:
-      - "{{.SOURCE}}"
-    generates:
-      - "{{.TARGET}}"
-    cmds:
-      - ln -frs {{.SOURCE}} {{.TARGET}}
-
   rootfs:
     desc: Build all root filesystem archives.
     deps:

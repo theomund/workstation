@@ -5,6 +5,10 @@
 ---
 version: "3"
 
+vars:
+  INSTALLER: target/installer/container/index.json
+  PAYLOAD: target/payload/container/index.json
+
 tasks:
   install:
     desc: Build installation ISO image.
@@ -16,6 +20,8 @@ tasks:
       ROOT: "{{.TARGET}}/root"
     sources:
       - "{{.CONFIG}}"
+      - "{{.INSTALLER}}"
+      - "{{.PAYLOAD}}"
     generates:
       - "{{.ISO}}"
     deps:
@@ -46,6 +52,7 @@ tasks:
       ISO: "{{.TARGET}}/workstation-{{.VERSION}}-{{.RELEASE}}-upgrade.iso"
       ROOT: "{{.TARGET}}/root"
     sources:
+      - "{{.PAYLOAD}}"
       - "{{.SOURCE}}/upgrade.sh"
     generates:
       - "{{.ISO}}"

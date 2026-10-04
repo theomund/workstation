@@ -1,0 +1,16 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+[Unit]
+Description=Payload component of workstation image
+Wants=network-online.target
+After=network-online.target plymouth-start.service
+Before=display-manager.service plymouth-quit.service plymouth-quit-wait.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/workstation-payload
+
+[Install]
+WantedBy=graphical.target

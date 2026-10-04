@@ -10,6 +10,8 @@ License: MPL-2.0
 ExclusiveArch: x86_64
 Source0: %{name}-%{_version}-%{_release}-rootfs.tar.gz
 Requires: almalinux-release-nvidia-driver
+Requires: rpmfusion-free-release
+Requires: rpmfusion-nonfree-release
 Requires: tmux
 
 %description
