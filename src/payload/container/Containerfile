@@ -5,14 +5,17 @@
 ARG BASE
 
 FROM ${BASE}
-RUN --mount=type=bind,source=target/payload/rpm,target=/tmp/RPMS,z \
+RUN --mount=type=bind,source=target/payload/rpm,target=/tmp/RPMS,ro,z \
     --mount=type=tmpfs,target=/run \
     --mount=type=tmpfs,target=/var/cache \
     --mount=type=tmpfs,target=/var/lib \
-    --mount=type=tmpfs,target=/var/log \
-    dnf install -y \
-    @multimedia \
-    @sound-and-video \
-    @workstation-product-environment \
-    /tmp/RPMS/*.rpm
+    --mount=type=tmpfs,target=/var/log <<'EOF'
+set -eux
+
+dnf install -y \
+  @multimedia \
+  @sound-and-video \
+  @workstation-product-environment \
+  /tmp/RPMS/*.rpm
+EOF
 RUN bootc container lint --fatal-warnings
