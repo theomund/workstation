@@ -25,16 +25,9 @@ dnf install -y \
 
 chmod 0400 /etc/shadow
 
-sed -i 's/^#cgroups =.*/cgroups = "disabled"/' /usr/share/containers/containers.conf
-sed -i 's/^mountopt/#&/; s/^#mount_program =.*/mount_program = ""/' /usr/share/containers/storage.conf
-
-echo '%wheel ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/wheel
-chmod 0440 /etc/sudoers.d/wheel
-
 useradd -m -G wheel developer
-
-printf '%s\n' '%_release %{getenv:RELEASE}' '%_version %{getenv:VERSION}' > /home/developer/.rpmmacros
-chown developer:developer /home/developer/.rpmmacros
 EOF
+COPY rootfs/etc/ /etc/
+COPY --chown=developer:developer rootfs/home/developer/ /home/developer/
 USER developer
 VOLUME ["/var/cache/image-builder/store", "/var/lib/containers/storage"]
