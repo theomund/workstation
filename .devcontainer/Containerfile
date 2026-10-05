@@ -19,12 +19,11 @@ RUN --mount=type=tmpfs,target=/var/cache \
     ShellCheck-0.10.0 \
     sudo-1.9.17 \
     xorriso-1.5.6 \
-    yamllint-1.37.1
-RUN chmod 0400 /etc/shadow
-RUN echo "%wheel ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/wheel
-RUN useradd -m developer -G wheel
+    yamllint-1.37.1 \
+    && chmod 0400 /etc/shadow \
+    && echo "%wheel ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/wheel \
+    && chmod 0440 /etc/sudoers.d/wheel \
+    && useradd -m -G wheel developer
 USER developer
 RUN echo -e "%_release %{getenv:RELEASE}\n%_version %{getenv:VERSION}" > /home/developer/.rpmmacros
-VOLUME /output
-VOLUME /var/cache/image-builder/store
-VOLUME /var/lib/containers/storage
+VOLUME ["/output", "/var/cache/image-builder/store", "/var/lib/containers/storage"]
