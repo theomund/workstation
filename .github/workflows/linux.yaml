@@ -21,3 +21,8 @@ jobs:
           cacheFrom: ghcr.io/theomund/workstation/devcontainer
           push: always
           runCmd: task ci
+      - name: Artifact Upload
+        uses: actions/upload-artifact@v7
+        with:
+          name: isos
+          path: target/iso/
