@@ -21,7 +21,7 @@ RUN --mount=type=tmpfs,target=/var/cache \
     xorriso-1.5.6 \
     yamllint-1.37.1 \
     && chmod 0400 /etc/shadow \
-    && sed -i 's/^#cgroups = "enabled"/cgroups = "disabled"/' /usr/share/containers/containers.conf \
+    && sed -i 's/^#cgroups =.*/cgroups = "disabled"/' /usr/share/containers/containers.conf \
     && sed -i 's/^mountopt/#&/; s/^#mount_program =.*/mount_program = ""/' /usr/share/containers/storage.conf \
     && echo "%wheel ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/wheel \
     && chmod 0440 /etc/sudoers.d/wheel \
