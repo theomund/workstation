@@ -9,9 +9,6 @@
   "build": {
     "dockerfile": "Containerfile"
   },
-  "containerEnv": {
-    "WORKSPACE_PATH": "${localWorkspaceFolder}"
-  },
   "customizations": {
     "vscode": {
       "extensions": [
@@ -20,7 +17,5 @@
       ]
     }
   },
-  "mounts": [
-    "source=/var/run/podman/podman.sock,target=/var/run/podman/podman.sock,type=bind"
-  ]
+  "privileged": true
 }
