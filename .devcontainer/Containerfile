@@ -21,6 +21,7 @@ RUN --mount=type=tmpfs,target=/var/cache \
     xorriso-1.5.6 \
     yamllint-1.37.1 \
     && chmod 0400 /etc/shadow \
+    && echo -e '[containers]\ncgroups = "disabled"' > /etc/containers/containers.conf \
     && echo "%wheel ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/wheel \
     && chmod 0440 /etc/sudoers.d/wheel \
     && useradd -m -G wheel developer

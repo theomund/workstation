@@ -41,7 +41,6 @@ tasks:
         .
       - cmd: sudo podman run
              --privileged
-             --cgroups=disabled
              --rm
              -v {{.STORAGE}}:{{.STORAGE}}
              {{.TAG}}
