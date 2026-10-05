@@ -26,4 +26,4 @@ RUN --mount=type=tmpfs,target=/var/cache \
     && useradd -m -G wheel developer
 USER developer
 RUN echo -e "%_release %{getenv:RELEASE}\n%_version %{getenv:VERSION}" > /home/developer/.rpmmacros
-VOLUME ["/output", "/var/cache/image-builder/store", "/var/lib/containers/storage"]
+VOLUME ["/var/cache/image-builder/store", "/var/lib/containers/storage"]
