@@ -17,5 +17,8 @@
       ]
     }
   },
-  "privileged": true
+  "privileged": true,
+  "runArgs": [
+    "--userns="
+  ]
 }
