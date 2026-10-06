@@ -21,7 +21,6 @@ dnf install -y \
   yamllint-1.37.1
 
 useradd -m -G wheel developer
-chmod 0400 /etc/shadow
 EOF
 COPY --chown=developer:developer <<'EOF' /home/developer/.rpmmacros
 %_version %{getenv:VERSION}
