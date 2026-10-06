@@ -18,6 +18,8 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Disable AppArmor Restriction
+        run: sudo apparmor_parser -R /etc/apparmor.d/bwrap-userns-restrict
       - name: Development Container Setup
         uses: devcontainers/ci@v0.3
         with:
