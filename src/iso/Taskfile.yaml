@@ -37,7 +37,7 @@ tasks:
         -v $WORKSPACE_PATH/{{.ROOT}}:/output
         ghcr.io/osbuild/image-builder:v85.0.0
         build
-        --blueprint {{.CONFIG}}
+        --blueprint /config.toml
         --bootc-installer-payload-ref
         {{.REGISTRY}}/payload:{{.VERSION}}-{{.RELEASE}}
         --bootc-ref
