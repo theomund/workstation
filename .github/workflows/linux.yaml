@@ -1,0 +1,34 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+---
+name: linux
+run-name: Linux Build
+"on": [push]
+jobs:
+  build:
+    runs-on: ubuntu-26.04
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+      - name: Login to Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Disable AppArmor Restriction
+        run: sudo apparmor_parser -R /etc/apparmor.d/bwrap-userns-restrict
+      - name: Setup Development Container
+        uses: devcontainers/ci@v0.3
+        with:
+          imageName: ghcr.io/theomund/workstation/devcontainer
+          cacheFrom: ghcr.io/theomund/workstation/devcontainer
+          push: always
+          runCmd: task ci
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: isos
+          path: target/iso/

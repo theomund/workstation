@@ -20,7 +20,8 @@
       ]
     }
   },
+  "initializeCommand": "sudo systemctl start podman.socket && sudo chown -R $(id -u):$(id -g) /run/podman",
   "mounts": [
-    "source=/var/run/podman/podman.sock,target=/var/run/podman/podman.sock,type=bind"
+    "source=/run/podman/podman.sock,target=/run/podman/podman.sock,type=bind"
   ]
 }

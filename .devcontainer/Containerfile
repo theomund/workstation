@@ -3,23 +3,28 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 FROM quay.io/almalinuxorg/almalinux:10.2-20261002
-RUN --mount=type=tmpfs,target=/var/cache \
-    dnf install -y \
-    epel-release-10 \
-    && dnf install -y \
-    bash-completion-2.11 \
-    git-2.52.0 \
-    gnupg2-2.4.5 \
-    https://github.com/anchore/grype/releases/download/v0.120.0/grype_0.120.0_linux_amd64.rpm \
-    https://github.com/anchore/syft/releases/download/v1.54.0/syft_1.54.0_linux_amd64.rpm \
-    https://github.com/go-task/task/releases/download/v3.54.0/task_3.54.0_linux_amd64.rpm \
-    podman-remote-5.8.2 \
-    rpmdevtools-9.6 \
-    rpmlint-2.8.0 \
-    ShellCheck-0.10.0 \
-    xorriso-1.5.6 \
-    yamllint-1.37.1
-RUN useradd -m developer
+RUN --mount=type=tmpfs,target=/var/cache <<'EOF'
+dnf install -y epel-release-10
+dnf install -y \
+  bash-completion-2.11 \
+  git-2.52.0 \
+  gnupg2-2.4.5 \
+  https://github.com/anchore/grype/releases/download/v0.120.0/grype_0.120.0_linux_amd64.rpm \
+  https://github.com/anchore/syft/releases/download/v1.54.0/syft_1.54.0_linux_amd64.rpm \
+  https://github.com/go-task/task/releases/download/v3.54.0/task_3.54.0_linux_amd64.rpm \
+  podman-remote-5.8.2 \
+  rpmdevtools-9.6 \
+  rpmlint-2.8.0 \
+  ShellCheck-0.10.0 \
+  sudo-1.9.17 \
+  xorriso-1.5.6 \
+  yamllint-1.37.1
+
+useradd -m -G wheel developer
+EOF
+COPY --chown=developer:developer <<'EOF' /home/developer/.rpmmacros
+%_version %{getenv:VERSION}
+%_release %{getenv:RELEASE}
+EOF
+ENV CONTAINER_HOST=unix:///run/podman/podman.sock
 USER developer
-RUN echo -e "%_release %{getenv:RELEASE}\n%_version %{getenv:VERSION}" > /home/developer/.rpmmacros
-ENV CONTAINER_HOST="unix:///var/run/podman/podman.sock"

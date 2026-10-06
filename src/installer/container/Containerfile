@@ -5,11 +5,12 @@
 ARG BASE
 
 FROM ${BASE}
-RUN --mount=type=bind,source=target/installer/rpm,target=/tmp/RPMS,z \
+RUN --mount=type=bind,source=target/installer/rpm,target=/tmp/RPMS,ro,z \
     --mount=type=tmpfs,target=/run \
     --mount=type=tmpfs,target=/var/cache \
     --mount=type=tmpfs,target=/var/lib \
-    --mount=type=tmpfs,target=/var/log \
-    dnf install -y /tmp/RPMS/*.rpm \
-    && dnf reinstall -y shim-x64
+    --mount=type=tmpfs,target=/var/log <<'EOF'
+dnf install -y /tmp/RPMS/*.rpm
+dnf reinstall -y shim-x64
+EOF
 RUN bootc container lint --fatal-warnings --skip nonempty-boot
