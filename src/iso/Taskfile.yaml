@@ -29,10 +29,10 @@ tasks:
     cmds:
       - mkdir -p {{.ROOT}}
       - defer: rm -rf {{.ROOT}}
+      - podman-remote info
       - podman-remote run
         --privileged
         --rm
-        --security-opt apparmor=unconfined
         -v /var/lib/containers/storage:/var/lib/containers/storage
         -v $WORKSPACE_PATH/{{.CONFIG}}:/config.toml
         -v $WORKSPACE_PATH/{{.ROOT}}:/output
