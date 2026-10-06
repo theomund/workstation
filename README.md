@@ -4,7 +4,7 @@
 
 # Workstation
 
-![Build](https://img.shields.io/github/actions/workflow/status/theomund/workstation/linux.yml?style=for-the-badge&logo=linux&logoColor=white)
+![Build](https://img.shields.io/github/actions/workflow/status/theomund/workstation/linux.yaml?style=for-the-badge&logo=linux&logoColor=white)
 ![License](https://img.shields.io/github/license/theomund/workstation?style=for-the-badge&logo=mozilla&logoColor=white)
 ![Toolchain](https://img.shields.io/badge/toolchain-10.2-blue?style=for-the-badge&logo=almalinux&logoColor=white)
 
