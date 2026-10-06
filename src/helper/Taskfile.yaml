@@ -34,12 +34,12 @@ tasks:
     cmds:
       - task: :common:container
         if: '{{ne .COMPONENT "common"}}'
-      - sudo podman build
+      - podman-remote build
         {{if ne .COMPONENT "common"}}--build-arg BASE={{.BASE}}{{end}}
         -f {{.CONTAINERFILE}}
         -t {{.TAG}}
         .
-      - cmd: sudo podman run
+      - cmd: podman-remote run
              --privileged
              --rm
              -v {{.STORAGE}}:{{.STORAGE}}
@@ -49,8 +49,7 @@ tasks:
              {{.TAG}}
              {{.TAG}}
         if: '{{eq .COMPONENT "payload"}}'
-      - sudo podman save --format oci-dir -o {{.CONTAINER}} {{.TAG}}
-      - sudo chown -R $(id -u):$(id -g) {{.CONTAINER}}
+      - podman-remote save --format oci-dir -o {{.CONTAINER}} {{.TAG}}
 
   cve:
     desc: Build {{.COMPONENT}} CVE table.

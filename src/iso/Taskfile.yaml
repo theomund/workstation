@@ -29,13 +29,20 @@ tasks:
     cmds:
       - mkdir -p {{.ROOT}}
       - defer: rm -rf {{.ROOT}}
-      - sudo image-builder build
+      - podman-remote run
+        --privileged
+        --rm
+        -v /var/lib/containers/storage:/var/lib/containers/storage
+        -v $WORKSPACE_PATH/{{.CONFIG}}:/config.toml
+        -v $WORKSPACE_PATH/{{.ROOT}}:/output
+        ghcr.io/osbuild/image-builder:v85.0.0
+        build
         --blueprint {{.CONFIG}}
         --bootc-installer-payload-ref
         {{.REGISTRY}}/payload:{{.VERSION}}-{{.RELEASE}}
         --bootc-ref
         {{.REGISTRY}}/installer:{{.VERSION}}-{{.RELEASE}}
-        --output-dir {{.ROOT}}
+        --output-dir /output
         bootc-installer
       - cp {{.ROOT}}/*.iso {{.ISO}}
 
