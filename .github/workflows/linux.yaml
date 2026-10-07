@@ -21,10 +21,7 @@ jobs:
       - name: Configure Host System
         run: |
           sudo apparmor_parser -R /etc/apparmor.d/bwrap-userns-restrict
-
           printf 'N' | sudo tee /sys/module/overlay/parameters/redirect_dir
-
-          sudo podman info --debug
       - name: Setup Development Container
         uses: devcontainers/ci@v0.3
         with:
