@@ -25,10 +25,20 @@ jobs:
           sudo tee /etc/containers/storage.conf >/dev/null <<'EOF'
           [storage]
           driver = "overlay"
+          graphroot = "/var/lib/containers/storage"
+          runroot = "/run/containers/storage"
+          transient_store = true
 
           [storage.options.overlay]
-          mountopt = "nodev,metacopy=off,redirect_dir=off"
+          mountopt = "nodev,redirect_dir=off,metacopy=off"
           EOF
+
+          cat /etc/containers/storage.conf
+
+          cat /sys/module/overlay/parameters/redirect_dir
+          cat /sys/module/overlay/parameters/metacopy
+
+          sudo podman info --debug
       - name: Setup Development Container
         uses: devcontainers/ci@v0.3
         with:
