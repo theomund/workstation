@@ -22,13 +22,9 @@ jobs:
         run: |
           sudo apparmor_parser -R /etc/apparmor.d/bwrap-userns-restrict
 
-          sudo tee /etc/containers/storage.conf >/dev/null <<'EOF'
-          [storage]
-          driver = "overlay"
+          printf 'N' | sudo tee /sys/module/overlay/parameters/redirect_dir
 
-          [storage.options.overlay]
-          mountopt = "nodev,redirect_dir=off,metacopy=off"
-          EOF
+          sudo podman info --debug
       - name: Setup Development Container
         uses: devcontainers/ci@v0.3
         with:
