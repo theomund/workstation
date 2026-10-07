@@ -32,13 +32,6 @@ jobs:
           [storage.options.overlay]
           mountopt = "nodev,redirect_dir=off,metacopy=off"
           EOF
-
-          cat /etc/containers/storage.conf
-
-          cat /sys/module/overlay/parameters/redirect_dir
-          cat /sys/module/overlay/parameters/metacopy
-
-          sudo podman info --debug
       - name: Setup Development Container
         uses: devcontainers/ci@v0.3
         with:
