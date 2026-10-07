@@ -20,8 +20,7 @@ tasks:
   container:
     desc: Build {{.COMPONENT}} container.
     vars:
-      BASE: "{{.REGISTRY}}/common:{{.VERSION}}-{{.RELEASE}}"
-      CONTAINERFILE: "{{.SOURCE}}/container/Containerfile"
+      CONTAINERFILE: src/helper/container/Containerfile
       STORAGE: /var/lib/containers
       TAG: "{{.REGISTRY}}/{{.COMPONENT}}:{{.VERSION}}-{{.RELEASE}}"
     sources:
@@ -35,7 +34,7 @@ tasks:
       - task: :common:container
         if: '{{ne .COMPONENT "common"}}'
       - podman-remote build
-        {{if ne .COMPONENT "common"}}--build-arg BASE={{.BASE}}{{end}}
+        --target {{.COMPONENT}}
         -f {{.CONTAINERFILE}}
         -t {{.TAG}}
         .
