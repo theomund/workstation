@@ -32,7 +32,6 @@ tasks:
       - podman-remote run
         --privileged
         --rm
-        -v /etc/containers/storage.conf:/etc/containers/storage.conf:ro
         -v /var/lib/containers/storage:/var/lib/containers/storage
         -v $WORKSPACE_PATH/{{.CONFIG}}:/config.toml
         -v $WORKSPACE_PATH/{{.ROOT}}:/output
