@@ -18,10 +18,10 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Disable AppArmor Restriction
-        run: sudo apparmor_parser -R /etc/apparmor.d/bwrap-userns-restrict
-      - name: Setup Native Overlay Driver
+      - name: Configure Host System
         run: |
+          sudo apparmor_parser -R /etc/apparmor.d/bwrap-userns-restrict
+
           sudo tee /etc/containers/storage.conf >/dev/null <<'EOF'
           [storage]
           driver = "overlay"
@@ -29,8 +29,6 @@ jobs:
           [storage.options.overlay]
           mountopt = "nodev,redirect_dir=off,metacopy=off"
           EOF
-
-          sudo podman info --debug
       - name: Setup Development Container
         uses: devcontainers/ci@v0.3
         with:
