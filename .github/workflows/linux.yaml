@@ -27,7 +27,7 @@ jobs:
           driver = "overlay"
 
           [storage.options.overlay]
-          mountopt = "nodev"
+          mountopt = "nodev,metacopy=off,redirect_dir=off"
           EOF
       - name: Setup Development Container
         uses: devcontainers/ci@v0.3
