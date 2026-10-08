@@ -78,8 +78,8 @@ tasks:
 
   rpm:
     desc: Build {{.COMPONENT}} RPM package.
-    vars:
-      ROOT: "{{.TARGET}}/rpm/root"
+    env:
+      TOP_DIR: "{{.ROOT_DIR}}/{{.TARGET}}/rpm/root"
     sources:
       - "{{.SRPM}}"
     generates:
@@ -87,17 +87,18 @@ tasks:
     deps:
       - srpm
     cmds:
-      - mkdir -p {{.ROOT}}
-      - defer: rm -rf {{.ROOT}}
-      - rpmbuild --define "_topdir $(pwd)/{{.ROOT}}" --rebuild {{.SRPM}}
-      - cp {{.ROOT}}/RPMS/x86_64/*.rpm {{.TARGET}}/rpm
+      - mkdir -p $TOP_DIR
+      - defer: rm -rf $TOP_DIR
+      - rpmbuild --rebuild {{.SRPM}}
+      - cp $TOP_DIR/RPMS/x86_64/*.rpm {{.TARGET}}/rpm
 
   srpm:
     desc: Build {{.COMPONENT}} SRPM package.
+    env:
+      TOP_DIR: "{{.ROOT_DIR}}/{{.TARGET}}/srpm/root"
     vars:
-      ROOT: "{{.TARGET}}/srpm/root"
       SPEC: "{{.SOURCE}}/srpm/workstation-{{.COMPONENT}}.spec"
-      SOURCES: "{{.ROOT}}/SOURCES"
+      SOURCES: $TOP_DIR/SOURCES
     sources:
       - "{{.ROOTFS}}"
       - "{{.SPEC}}"
@@ -107,10 +108,10 @@ tasks:
       - rootfs
     cmds:
       - mkdir -p {{.SOURCES}}
-      - defer: rm -rf {{.ROOT}}
+      - defer: rm -rf $TOP_DIR
       - cp {{.ROOTFS}} {{.SOURCES}}
-      - rpmbuild --define "_topdir $(pwd)/{{.ROOT}}" -bs {{.SPEC}}
-      - cp {{.ROOT}}/SRPMS/*.src.rpm {{.TARGET}}/srpm
+      - rpmbuild -bs {{.SPEC}}
+      - cp $TOP_DIR/SRPMS/*.src.rpm {{.TARGET}}/srpm
 
   sbom:
     desc: Build {{.COMPONENT}} SBOM file.

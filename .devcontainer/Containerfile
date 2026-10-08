@@ -5,12 +5,13 @@
 FROM quay.io/almalinuxorg/almalinux:10.2-20261002
 RUN --mount=type=tmpfs,target=/var/cache <<'EOF'
 dnf install -y epel-release-10
+
 dnf install -y \
   bash-completion-2.11 \
   git-2.52.0 \
   gnupg2-2.4.5 \
-  https://github.com/anchore/grype/releases/download/v0.120.0/grype_0.120.0_linux_amd64.rpm \
-  https://github.com/anchore/syft/releases/download/v1.54.0/syft_1.54.0_linux_amd64.rpm \
+  https://github.com/anchore/grype/releases/download/v0.120.1/grype_0.120.1_linux_amd64.rpm \
+  https://github.com/anchore/syft/releases/download/v1.54.1/syft_1.54.1_linux_amd64.rpm \
   https://github.com/go-task/task/releases/download/v3.54.0/task_3.54.0_linux_amd64.rpm \
   podman-remote-5.8.2 \
   rpmdevtools-9.6 \
@@ -22,8 +23,9 @@ dnf install -y \
 useradd -m -G wheel developer
 EOF
 COPY --chown=developer:developer <<'EOF' /home/developer/.rpmmacros
-%_version %{getenv:VERSION}
 %_release %{getenv:RELEASE}
+%_topdir  %{getenv:TOP_DIR}
+%_version %{getenv:VERSION}
 EOF
 ENV CONTAINER_HOST=unix:///run/podman/podman.sock
 USER developer
