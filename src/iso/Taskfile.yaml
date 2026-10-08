@@ -35,7 +35,7 @@ tasks:
         -v /var/lib/containers/storage:/var/lib/containers/storage
         -v $WORKSPACE_PATH/{{.CONFIG}}:/config.toml
         -v $WORKSPACE_PATH/{{.ROOT}}:/output
-        ghcr.io/osbuild/image-builder:v85.0.0
+        ghcr.io/osbuild/image-builder:v86.0.0
         build
         --blueprint /config.toml
         --bootc-installer-payload-ref

@@ -37,6 +37,9 @@ tar xzvf %{SOURCE0} -C %{buildroot}
 %systemd_post workstation-payload.service
 sed -i 's/^#mount_program =.*/mount_program = ""/; s/^mountopt =/#&/' /usr/share/containers/storage.conf
 
+%posttrans
+systemctl preset bootc-fetch-apply-updates.timer rpm-ostree-countme.timer
+
 %files
 %{_datadir}/flatpak/preinstall.d/%{name}.preinstall
 %{_datadir}/flatpak/remotes.d/%{name}.flatpakrepo
