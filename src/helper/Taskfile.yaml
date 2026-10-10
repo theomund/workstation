@@ -21,7 +21,7 @@ tasks:
     desc: Build {{.COMPONENT}} container.
     vars:
       BASE: "{{.REGISTRY}}/common:{{.VERSION}}-{{.RELEASE}}"
-      CONTAINERFILE: src/{{.COMPONENT}}/container/Containerfile
+      CONTAINERFILE: "{{.SOURCE}}}/container/Containerfile"
       PAYLOAD: $WORKSPACE_PATH/target/payload
       TAG: "{{.REGISTRY}}/{{.COMPONENT}}:{{.VERSION}}-{{.RELEASE}}"
     sources:
