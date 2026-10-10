@@ -12,12 +12,10 @@ vars:
 
   G_TARGET: target/{{.G_COMPONENT}}
   G_CONTAINER: "{{printf .G_CONTAINER_FORMAT .G_COMPONENT}}"
-  G_CVE: "{{.G_TARGET}}/cve/{{.G_PREFIX}}-cve.txt"
   G_OCI: "{{printf .G_OCI_FORMAT .G_COMPONENT}}"
   G_ROOTFS: "{{.G_TARGET}}/rootfs/{{.G_PREFIX}}-rootfs.tar.gz"
   G_RPM: "{{.G_TARGET}}/rpm/{{.G_PREFIX}}.el10.x86_64.rpm"
   G_SBOM: "{{.G_TARGET}}/sbom/{{.G_PREFIX}}-sbom.json"
-  G_SRPM: "{{.G_TARGET}}/rpm/{{.G_PREFIX}}.el10.src.rpm"
 
 tasks:
   container:
@@ -62,15 +60,17 @@ tasks:
     desc: Build {{.G_COMPONENT}} CVE table.
     env:
       NO_COLOR: "1"
+    vars:
+      CVE: "{{.G_TARGET}}/cve/{{.G_PREFIX}}-cve.txt"
     sources:
       - "{{.G_SBOM}}"
     generates:
-      - "{{.G_CVE}}"
+      - "{{.CVE}}"
     deps:
       - :db
       - sbom
     cmds:
-      - grype sbom:"{{.G_SBOM}}" -o table="{{.G_CVE}}"
+      - grype sbom:"{{.G_SBOM}}" -o table="{{.CVE}}"
 
   oci:
     desc: Build {{.G_COMPONENT}} container archive.
@@ -100,13 +100,14 @@ tasks:
     desc: Build {{.G_COMPONENT}} SRPM/RPM package.
     vars:
       SPEC: "{{.G_SOURCE}}/rpm/{{.G_NAME}}-{{.G_COMPONENT}}.spec"
+      SRPM: "{{.G_TARGET}}/rpm/{{.G_PREFIX}}.el10.src.rpm"
       TOP_DIR: "{{.ROOT_DIR}}/{{.G_TARGET}}/rpm/root"
     sources:
       - "{{.G_ROOTFS}}"
       - "{{.SPEC}}"
     generates:
       - "{{.G_RPM}}"
-      - "{{.G_SRPM}}"
+      - "{{.SRPM}}"
     deps:
       - rootfs
     cmds:
@@ -115,7 +116,7 @@ tasks:
         --define "_rpmdir {{.ROOT_DIR}}/{{dir .G_RPM}}"
         --define "_rpmfilename %{NAME}-%{VERSION}-%{RELEASE}.%{ARCH}.rpm"
         --define "_sourcedir {{.ROOT_DIR}}/{{dir .G_ROOTFS}}"
-        --define "_srcrpmdir {{.ROOT_DIR}}/{{dir .G_SRPM}}"
+        --define "_srcrpmdir {{.ROOT_DIR}}/{{dir .SRPM}}"
         --define "_topdir {{.TOP_DIR}}"
         -ba
         "{{.SPEC}}"
