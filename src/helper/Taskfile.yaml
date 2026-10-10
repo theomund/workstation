@@ -8,12 +8,12 @@ version: "3"
 vars:
   G_PREFIX: "{{.G_NAME}}-{{.G_COMPONENT}}-{{.G_SUFFIX}}"
   G_SOURCE: src/{{.G_COMPONENT}}
-  G_TAG: "{{.G_REGISTRY}}/{{.G_COMPONENT}}:{{.G_SUFFIX}}"
+  G_TAG: "{{printf .G_TAG_FORMAT .G_COMPONENT}}"
 
   G_TARGET: target/{{.G_COMPONENT}}
-  G_CONTAINER: "{{.G_TARGET}}/container/{{.G_PREFIX}}-iid.txt"
+  G_CONTAINER: "{{printf .G_CONTAINER_FORMAT .G_COMPONENT}}"
   G_CVE: "{{.G_TARGET}}/cve/{{.G_PREFIX}}-cve.txt"
-  G_OCI: "{{.G_TARGET}}/container/{{.G_PREFIX}}-oci.tar"
+  G_OCI: "{{printf .G_OCI_FORMAT .G_COMPONENT}}"
   G_ROOTFS: "{{.G_TARGET}}/rootfs/{{.G_PREFIX}}-rootfs.tar.gz"
   G_RPM: "{{.G_TARGET}}/rpm/{{.G_PREFIX}}.el10.x86_64.rpm"
   G_SBOM: "{{.G_TARGET}}/sbom/{{.G_PREFIX}}-sbom.json"
@@ -23,8 +23,8 @@ tasks:
   container:
     desc: Build {{.G_COMPONENT}} container.
     vars:
-      BASE_ID: target/common/container/{{.G_NAME}}-common-{{.G_SUFFIX}}-iid.txt
-      BASE_TAG: "{{.G_REGISTRY}}/common:{{.G_SUFFIX}}"
+      BASE_ID: '{{printf .G_CONTAINER_FORMAT "common"}}'
+      BASE_TAG: '{{printf .G_TAG_FORMAT "common"}}'
       CONTAINERFILE: "{{.G_SOURCE}}/container/Containerfile"
       ROOT: "{{.G_TARGET}}/container/root"
     sources:
@@ -81,6 +81,7 @@ tasks:
     deps:
       - container
     cmds:
+      - mkdir -p "{{dir .G_OCI}}"
       - podman-remote save --format oci-archive -o "{{.G_OCI}}" {{.G_TAG}}
 
   rootfs:
@@ -92,7 +93,7 @@ tasks:
     generates:
       - "{{.G_ROOTFS}}"
     cmds:
-      - mkdir -p "{{.G_TARGET}}/rootfs"
+      - mkdir -p "{{dir .G_ROOTFS}}"
       - tar --exclude '.gitkeep' -czvf "{{.G_ROOTFS}}" -C "{{.FILES}}" "."
 
   rpm:
@@ -111,10 +112,10 @@ tasks:
     cmds:
       - defer: rm -rf "{{.TOP_DIR}}"
       - rpmbuild
-        --define "_rpmdir {{.ROOT_DIR}}/{{.G_TARGET}}/rpm"
+        --define "_rpmdir {{.ROOT_DIR}}/{{dir .G_RPM}}"
         --define "_rpmfilename %{NAME}-%{VERSION}-%{RELEASE}.%{ARCH}.rpm"
-        --define "_sourcedir {{.ROOT_DIR}}/{{.G_TARGET}}/rootfs"
-        --define "_srcrpmdir {{.ROOT_DIR}}/{{.G_TARGET}}/rpm"
+        --define "_sourcedir {{.ROOT_DIR}}/{{dir .G_ROOTFS}}"
+        --define "_srcrpmdir {{.ROOT_DIR}}/{{dir .G_SRPM}}"
         --define "_topdir {{.TOP_DIR}}"
         -ba
         "{{.SPEC}}"

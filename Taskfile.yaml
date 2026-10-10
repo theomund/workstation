@@ -35,6 +35,12 @@ vars:
   G_REGISTRY: ghcr.io/theomund/{{.G_NAME}}
   G_SUFFIX: "{{.VERSION}}-{{.RELEASE}}"
 
+  G_CONTAINER_FORMAT: >-
+    target/%[1]s/container/{{.G_NAME}}-%[1]s-{{.G_SUFFIX}}-iid.txt
+  G_ISO_FORMAT: target/iso/%[1]s/{{.G_NAME}}-{{.G_SUFFIX}}-%[1]s.iso
+  G_OCI_FORMAT: target/%[1]s/oci/{{.G_NAME}}-%[1]s-{{.G_SUFFIX}}-oci.tar
+  G_TAG_FORMAT: "{{.G_REGISTRY}}/%s:{{.G_SUFFIX}}"
+
 tasks:
   ci:
     desc: Run CI/CD pipeline.

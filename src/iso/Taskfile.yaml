@@ -13,12 +13,12 @@ tasks:
       STORAGE: /var/lib/containers/storage
 
       TARGET: target/iso/install
-      ISO: "{{.TARGET}}/{{.G_NAME}}-{{.G_SUFFIX}}-install.iso"
+      ISO: '{{printf .G_ISO_FORMAT "install"}}'
       ROOT: "{{.TARGET}}/root"
     sources:
       - "{{.CONFIG}}"
-      - target/installer/container/{{.G_NAME}}-installer-{{.G_SUFFIX}}-iid.txt
-      - target/payload/container/{{.G_NAME}}-payload-{{.G_SUFFIX}}-iid.txt
+      - '{{printf .G_CONTAINER_FORMAT "installer"}}'
+      - '{{printf .G_CONTAINER_FORMAT "payload"}}'
     generates:
       - "{{.ISO}}"
     deps:
@@ -35,10 +35,8 @@ tasks:
         ghcr.io/osbuild/image-builder:v86.0.0
         build
         --blueprint "/config.toml"
-        --bootc-installer-payload-ref
-        {{.G_REGISTRY}}/payload:{{.G_SUFFIX}}
-        --bootc-ref
-        {{.G_REGISTRY}}/installer:{{.G_SUFFIX}}
+        --bootc-installer-payload-ref {{printf .G_TAG_FORMAT "payload"}}
+        --bootc-ref {{printf .G_TAG_FORMAT "installer"}}
         --output-dir "/output"
         bootc-installer
       - mv "{{.ROOT}}"/*.iso "{{.ISO}}"
@@ -46,12 +44,11 @@ tasks:
   upgrade:
     desc: Build upgrade ISO image.
     vars:
-      PAYLOAD: >-
-        target/payload/container/{{.G_NAME}}-payload-{{.G_SUFFIX}}-oci.tar
+      PAYLOAD: '{{printf .G_OCI_FORMAT "payload"}}'
       SOURCE: src/iso/upgrade
 
       TARGET: target/iso/upgrade
-      ISO: "{{.TARGET}}/{{.G_NAME}}-{{.G_SUFFIX}}-upgrade.iso"
+      ISO: '{{printf .G_ISO_FORMAT "upgrade"}}'
     sources:
       - "{{.PAYLOAD}}"
       - "{{.SOURCE}}/upgrade.sh"
@@ -60,5 +57,5 @@ tasks:
     deps:
       - :payload:oci
     cmds:
-      - mkdir -p "{{.TARGET}}"
+      - mkdir -p "{{dir .ISO}}"
       - mkisofs -R -J -o "{{.ISO}}" "{{.SOURCE}}" "{{.PAYLOAD}}"
