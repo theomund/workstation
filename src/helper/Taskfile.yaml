@@ -88,10 +88,8 @@ tasks:
 
   rpm:
     desc: Build {{.COMPONENT}} RPM package.
-    env:
+    vars:
       TOP_DIR: "{{.ROOT_DIR}}/{{.TARGET}}/rpm/root"
-      ROOTFS_DIR: "{{.ROOT_DIR}}/{{.TARGET}}/rpm/root/SOURCES"
-      SRPM_DIR: "{{.ROOT_DIR}}/{{.TARGET}}/rpm/root/SRPM"
     sources:
       - "{{.SRPM}}"
     generates:
@@ -99,18 +97,21 @@ tasks:
     deps:
       - srpm
     cmds:
-      - defer: rm -rf $TOP_DIR
-      - rpmbuild --rebuild {{.SRPM}}
-      - mv $TOP_DIR/RPMS/x86_64/*.rpm {{.TARGET}}/rpm
+      - defer: rm -rf {{.TOP_DIR}}
+      - rpmbuild
+        --define "_release {{.RELEASE}}"
+        --define "_rpmdir {{.ROOT_DIR}}/{{.TARGET}}/rpm"
+        --define "_rpmfilename %{NAME}-%{VERSION}-%{RELEASE}.%{ARCH}.rpm"
+        --define "_topdir {{.TOP_DIR}}"
+        --define "_version {{.VERSION}}"
+        --rebuild
+        {{.SRPM}}
 
   srpm:
     desc: Build {{.COMPONENT}} SRPM package.
-    env:
-      ROOTFS_DIR: "{{.ROOT_DIR}}/{{.TARGET}}/rootfs"
-      SRPM_DIR: "{{.ROOT_DIR}}/{{.TARGET}}/srpm"
-      TOP_DIR: "{{.ROOT_DIR}}/{{.TARGET}}/srpm/root"
     vars:
       SPEC: "{{.SOURCE}}/srpm/workstation-{{.COMPONENT}}.spec"
+      TOP_DIR: "{{.ROOT_DIR}}/{{.TARGET}}/srpm/root"
     sources:
       - "{{.ROOTFS}}"
       - "{{.SPEC}}"
@@ -119,8 +120,14 @@ tasks:
     deps:
       - rootfs
     cmds:
-      - defer: rm -rf $TOP_DIR
-      - rpmbuild -bs {{.SPEC}}
+      - defer: rm -rf {{.TOP_DIR}}
+      - rpmbuild -bs
+        --define "_release {{.RELEASE}}"
+        --define "_sourcedir {{.ROOT_DIR}}/{{.TARGET}}/rootfs"
+        --define "_srcrpmdir {{.ROOT_DIR}}/{{.TARGET}}/srpm"
+        --define "_topdir {{.TOP_DIR}}"
+        --define "_version {{.VERSION}}"
+        {{.SPEC}}
 
   sbom:
     desc: Build {{.COMPONENT}} SBOM file.

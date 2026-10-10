@@ -22,12 +22,5 @@ dnf install -y \
 
 useradd -m -G wheel developer
 EOF
-COPY --chown=developer:developer <<'EOF' /home/developer/.rpmmacros
-%_release %{getenv:RELEASE}
-%_sourcedir %{getenv:ROOTFS_DIR}
-%_srcrpmdir %{getenv:SRPM_DIR}
-%_topdir  %{getenv:TOP_DIR}
-%_version %{getenv:VERSION}
-EOF
 ENV CONTAINER_HOST=unix:///run/podman/podman.sock
 USER developer

@@ -25,13 +25,11 @@ dotenv: [".env"]
 
 run: when_changed
 
-env:
-  VERSION: 0.2.0
-  RELEASE: 1
-
 vars:
   COMPONENTS: [common, installer, payload]
   REGISTRY: ghcr.io/theomund/workstation
+  VERSION: 0.2.0
+  RELEASE: 1
   SUFFIX: "{{.VERSION}}-{{.RELEASE}}"
 
 tasks:
@@ -49,8 +47,8 @@ tasks:
   container:
     desc: Build all container images.
     deps:
-      - installer:container
-      - payload:container
+      - for: {var: COMPONENTS}
+        task: "{{.ITEM}}:container"
 
   cve:
     desc: Build all CVE tables.
