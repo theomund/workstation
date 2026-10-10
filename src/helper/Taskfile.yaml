@@ -20,8 +20,9 @@ tasks:
   container:
     desc: Build {{.COMPONENT}} container.
     vars:
-      CONTAINERFILE: src/helper/container/Containerfile
-      STORAGE: /var/lib/containers
+      BASE: "{{.REGISTRY}}/common:{{.VERSION}}-{{.RELEASE}}"
+      CONTAINERFILE: src/{{.COMPONENT}}/container/Containerfile
+      PAYLOAD: $WORKSPACE_PATH/target/payload
       TAG: "{{.REGISTRY}}/{{.COMPONENT}}:{{.VERSION}}-{{.RELEASE}}"
     sources:
       - "{{.CONTAINERFILE}}"
@@ -34,20 +35,19 @@ tasks:
       - task: :common:container
         if: '{{ne .COMPONENT "common"}}'
       - podman-remote build
-        --target {{.COMPONENT}}
+        {{if ne .COMPONENT "common"}}
+        --build-arg BASE={{.BASE}}
+        {{end}}
+        {{if eq .COMPONENT "payload"}}
+        --build-arg CHUNKAH_CONFIG_STR="$(podman-remote inspect {{.BASE}})"
+        --build-arg CHUNKAH_OUTPUT={{.PAYLOAD}}/out
+        --security-opt label=disable
+        --skip-unused-stages=false
+        {{end}}
         -f {{.CONTAINERFILE}}
         -t {{.TAG}}
+        -v {{.PAYLOAD}}:/run/src
         .
-      - cmd: podman-remote run
-             --privileged
-             --rm
-             -v {{.STORAGE}}:{{.STORAGE}}
-             {{.TAG}}
-             /usr/libexec/bootc-base-imagectl
-             rechunk
-             {{.TAG}}
-             {{.TAG}}
-        if: '{{eq .COMPONENT "payload"}}'
       - podman-remote save --format oci-dir -o {{.CONTAINER}} {{.TAG}}
 
   cve:
