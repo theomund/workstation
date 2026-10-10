@@ -15,7 +15,6 @@ Requires: bcvk
 Requires: cockpit-machines
 Requires: code
 Requires: ffmpeg
-Requires: ffmpeg-libs
 Requires: firefox
 Requires: nvidia-driver
 Requires: nvidia-driver-cuda

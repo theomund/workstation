@@ -13,8 +13,7 @@ tasks:
   install:
     desc: Build installation ISO image.
     vars:
-      SOURCE: src/iso/install
-      CONFIG: "{{.SOURCE}}/config.toml"
+      CONFIG: "src/iso/install/config.toml"
       INSTALLER: target/installer/container/workstation-installer-{{.TAR}}
       TARGET: target/iso/install
       ISO: "{{.TARGET}}/workstation-{{.SUFFIX}}-install.iso"

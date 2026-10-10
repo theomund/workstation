@@ -15,7 +15,6 @@ Requires: anaconda-dracut
 Requires: anaconda-install-env-deps
 Requires: biosdevname
 Requires: dracut-config-generic
-Requires: dracut-network
 Requires: grub2-efi-x64-cdboot
 Requires: lorax-templates-almalinux
 Requires: net-tools

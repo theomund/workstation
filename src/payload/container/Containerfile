@@ -6,7 +6,7 @@ ARG BASE
 ARG CHUNKAH_OUTPUT
 
 FROM ${BASE} AS rootfs
-RUN --mount=type=bind,source=target/payload/rpm,target=/tmp/RPMS,ro,z \
+RUN --mount=type=bind,source=target/payload/rpm,target=/tmp/RPMS,z \
     --mount=type=tmpfs,target=/run \
     --mount=type=tmpfs,target=/var/cache \
     --mount=type=tmpfs,target=/var/lib \
@@ -19,7 +19,7 @@ dnf install -y \
 EOF
 RUN bootc container lint --fatal-warnings
 
-FROM quay.io/coreos/chunkah:v0.7.0 AS rechunker
+FROM quay.io/coreos/chunkah:v0.7.0
 ARG CHUNKAH_CHOWN
 ARG CHUNKAH_CONFIG_STR
 RUN --mount=from=rootfs,target=/chunkah,ro \
@@ -34,4 +34,4 @@ chunkah build \
 chown -R ${CHUNKAH_CHOWN} /run/src/out
 EOF
 
-FROM oci:${CHUNKAH_OUTPUT} AS payload
+FROM oci:${CHUNKAH_OUTPUT}

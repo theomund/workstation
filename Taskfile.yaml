@@ -87,7 +87,7 @@ tasks:
     deps:
       - srpm
     cmds:
-      - rpmlint target/**/*.src.rpm
+      - rpmlint target/*/srpm/*.src.rpm
 
   lint:shellcheck:
     desc: Lint the shell scripts.

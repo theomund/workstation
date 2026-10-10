@@ -4,8 +4,8 @@
 
 ARG BASE
 
-FROM ${BASE} AS installer
-RUN --mount=type=bind,source=target/installer/rpm,target=/tmp/RPMS,ro,z \
+FROM ${BASE}
+RUN --mount=type=bind,source=target/installer/rpm,target=/tmp/RPMS,z \
     --mount=type=tmpfs,target=/run \
     --mount=type=tmpfs,target=/var/cache \
     --mount=type=tmpfs,target=/var/lib \

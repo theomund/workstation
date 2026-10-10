@@ -24,16 +24,17 @@ tasks:
       CONTAINERFILE: "{{.SOURCE}}/container/Containerfile"
       ROOT: "{{.TARGET}}/container/root"
       TAG: "{{.REGISTRY}}/{{.COMPONENT}}:{{.SUFFIX}}"
+      TAR: target/common/container/workstation-common-{{.SUFFIX}}-container.tar
     sources:
       - "{{.CONTAINERFILE}}"
       - "{{.RPM}}"
+      - '{{if ne .COMPONENT "common"}}{{.TAR}}{{end}}'
     generates:
       - "{{.CONTAINER}}"
     deps:
+      - container:base
       - rpm
     cmds:
-      - task: :common:container
-        if: '{{ne .COMPONENT "common"}}'
       - mkdir -p {{.ROOT}}
       - defer: rm -rf {{.ROOT}}
       - podman-remote build
@@ -52,6 +53,12 @@ tasks:
         -t {{.TAG}}
         .
       - podman-remote save --format oci-archive -o {{.CONTAINER}} {{.TAG}}
+
+  container:base:
+    internal: true
+    if: '{{ne .COMPONENT "common"}}'
+    deps:
+      - :common:container
 
   cve:
     desc: Build {{.COMPONENT}} CVE table.
@@ -90,7 +97,6 @@ tasks:
     deps:
       - srpm
     cmds:
-      - mkdir -p $TOP_DIR
       - defer: rm -rf $TOP_DIR
       - rpmbuild --rebuild {{.SRPM}}
       - mv $TOP_DIR/RPMS/x86_64/*.rpm {{.TARGET}}/rpm
@@ -100,7 +106,7 @@ tasks:
     env:
       ROOTFS_DIR: "{{.ROOT_DIR}}/{{.TARGET}}/rootfs"
       SRPM_DIR: "{{.ROOT_DIR}}/{{.TARGET}}/srpm"
-      TOP_DIR: "{{.SRPM_DIR}}/root"
+      TOP_DIR: "{{.ROOT_DIR}}/{{.TARGET}}/srpm/root"
     vars:
       SPEC: "{{.SOURCE}}/srpm/workstation-{{.COMPONENT}}.spec"
     sources:
