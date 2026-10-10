@@ -90,6 +90,8 @@ tasks:
     desc: Build {{.COMPONENT}} RPM package.
     env:
       TOP_DIR: "{{.ROOT_DIR}}/{{.TARGET}}/rpm/root"
+      ROOTFS_DIR: "{{.ROOT_DIR}}/{{.TARGET}}/rpm/root/SOURCES"
+      SRPM_DIR: "{{.ROOT_DIR}}/{{.TARGET}}/rpm/root/SRPM"
     sources:
       - "{{.SRPM}}"
     generates:
