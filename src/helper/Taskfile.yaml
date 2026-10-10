@@ -43,10 +43,10 @@ tasks:
         --build-arg CHUNKAH_OUTPUT={{.PAYLOAD}}/out
         --security-opt label=disable
         --skip-unused-stages=false
+        -v {{.PAYLOAD}}:/run/src
         {{end}}
         -f {{.CONTAINERFILE}}
         -t {{.TAG}}
-        -v {{.PAYLOAD}}:/run/src
         .
       - podman-remote save --format oci-dir -o {{.CONTAINER}} {{.TAG}}
 
