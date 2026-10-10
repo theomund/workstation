@@ -39,8 +39,8 @@ tasks:
   ci:
     desc: Run CI/CD pipeline.
     cmds:
-      - lint
-      - iso
+      - task: lint
+      - task: iso
 
   clean:
     desc: Clean the project.
