@@ -6,7 +6,8 @@
 version: "3"
 
 vars:
-  PAYLOAD: target/payload/container/workstation-payload-{{.SUFFIX}}-container.tar
+  TAR: "{{.SUFFIX}}-container.tar"
+  PAYLOAD: target/payload/container/workstation-payload-{{.TAR}}
 
 tasks:
   install:
@@ -14,7 +15,7 @@ tasks:
     vars:
       SOURCE: src/iso/install
       CONFIG: "{{.SOURCE}}/config.toml"
-      INSTALLER: target/installer/container/workstation-installer-{{.SUFFIX}}-container.tar
+      INSTALLER: target/installer/container/workstation-installer-{{.TAR}}
       TARGET: target/iso/install
       ISO: "{{.TARGET}}/workstation-{{.SUFFIX}}-install.iso"
       ROOT: "{{.TARGET}}/root"
