@@ -64,5 +64,5 @@ tasks:
     cmds:
       - mkdir -p {{.ROOT}}
       - defer: rm -rf {{.ROOT}}
-      - cp -r {{.SOURCE}} {{.PAYLOAD}} {{.ROOT}}
+      - cp -r {{.SOURCE}}/* {{.PAYLOAD}} {{.ROOT}}
       - mkisofs -R -J -o {{.ISO}} {{.ROOT}}
