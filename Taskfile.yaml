@@ -25,12 +25,14 @@ dotenv: [".env"]
 
 run: when_changed
 
+env:
+  VERSION: 0.2.0
+  RELEASE: 1
+
 vars:
   COMPONENTS: [common, installer, payload]
   REGISTRY: ghcr.io/theomund/workstation
-  VERSION: 0.2.0
-  RELEASE: 1
-  SUFFIX: "{{.VERSION}}-{{.RELEASE}}"
+  SUFFIX: $VERSION-$RELEASE
 
 tasks:
   ci:
@@ -81,11 +83,11 @@ tasks:
       - lint:yamllint
 
   lint:rpmlint:
-    desc: Lint the SRPM packages.
+    desc: Lint the RPM packages.
     deps:
-      - srpm
+      - rpm
     cmds:
-      - rpmlint target/*/srpm/*.src.rpm
+      - rpmlint target/*/rpm/*.src.rpm
 
   lint:shellcheck:
     desc: Lint the shell scripts.
@@ -116,9 +118,3 @@ tasks:
     deps:
       - for: {var: COMPONENTS}
         task: "{{.ITEM}}:sbom"
-
-  srpm:
-    desc: Build all SRPM packages.
-    deps:
-      - for: {var: COMPONENTS}
-        task: "{{.ITEM}}:srpm"

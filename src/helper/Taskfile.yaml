@@ -14,7 +14,7 @@ vars:
   ROOTFS: "{{.TARGET}}/rootfs/{{.PREFIX}}-rootfs.tar.gz"
   RPM: "{{.TARGET}}/rpm/{{.PREFIX}}.el10.x86_64.rpm"
   SBOM: "{{.TARGET}}/sbom/{{.PREFIX}}-sbom.json"
-  SRPM: "{{.TARGET}}/srpm/{{.PREFIX}}.el10.src.rpm"
+  SRPM: "{{.TARGET}}/rpm/{{.PREFIX}}.el10.src.rpm"
 
 tasks:
   container:
@@ -87,46 +87,27 @@ tasks:
       - tar --exclude '.gitkeep' -czvf {{.ROOTFS}} -C {{.FILES}} .
 
   rpm:
-    desc: Build {{.COMPONENT}} RPM package.
+    desc: Build {{.COMPONENT}} SRPM/RPM package.
     vars:
+      SPEC: "{{.SOURCE}}/rpm/workstation-{{.COMPONENT}}.spec"
       TOP_DIR: "{{.ROOT_DIR}}/{{.TARGET}}/rpm/root"
-    sources:
-      - "{{.SRPM}}"
-    generates:
-      - "{{.RPM}}"
-    deps:
-      - srpm
-    cmds:
-      - defer: rm -rf {{.TOP_DIR}}
-      - rpmbuild
-        --define "_release {{.RELEASE}}"
-        --define "_rpmdir {{.ROOT_DIR}}/{{.TARGET}}/rpm"
-        --define "_rpmfilename %{NAME}-%{VERSION}-%{RELEASE}.%{ARCH}.rpm"
-        --define "_topdir {{.TOP_DIR}}"
-        --define "_version {{.VERSION}}"
-        --rebuild
-        {{.SRPM}}
-
-  srpm:
-    desc: Build {{.COMPONENT}} SRPM package.
-    vars:
-      SPEC: "{{.SOURCE}}/srpm/workstation-{{.COMPONENT}}.spec"
-      TOP_DIR: "{{.ROOT_DIR}}/{{.TARGET}}/srpm/root"
     sources:
       - "{{.ROOTFS}}"
       - "{{.SPEC}}"
     generates:
+      - "{{.RPM}}"
       - "{{.SRPM}}"
     deps:
       - rootfs
     cmds:
       - defer: rm -rf {{.TOP_DIR}}
-      - rpmbuild -bs
-        --define "_release {{.RELEASE}}"
+      - rpmbuild
+        --define "_rpmdir {{.ROOT_DIR}}/{{.TARGET}}/rpm"
+        --define "_rpmfilename %{NAME}-%{VERSION}-%{RELEASE}.%{ARCH}.rpm"
         --define "_sourcedir {{.ROOT_DIR}}/{{.TARGET}}/rootfs"
-        --define "_srcrpmdir {{.ROOT_DIR}}/{{.TARGET}}/srpm"
+        --define "_srcrpmdir {{.ROOT_DIR}}/{{.TARGET}}/rpm"
         --define "_topdir {{.TOP_DIR}}"
-        --define "_version {{.VERSION}}"
+        -ba
         {{.SPEC}}
 
   sbom:
