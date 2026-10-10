@@ -6,21 +6,12 @@
 
 set -eu
 
-log_message() {
-  echo "$1"
+MESSAGE="Installing Flatpak applications."
 
-  if plymouth --ping; then
-    plymouth display-message --text="$1"
-  fi
-}
+echo "$MESSAGE"
 
-install_flatpaks() {
-  log_message "Installing Flatpak applications."
-  flatpak preinstall -y --noninteractive
-}
+if plymouth --ping; then
+  plymouth display-message --text="$MESSAGE"
+fi
 
-main() {
-  install_flatpaks
-}
-
-main "$@"
+exec flatpak preinstall --noninteractive

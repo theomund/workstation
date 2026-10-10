@@ -11,7 +11,6 @@ ExclusiveArch: x86_64
 URL: https://github.com/theomund/workstation
 Source0: file://%{name}-%{_version}-%{_release}-rootfs.tar.gz
 Requires: almalinux-release-nvidia-driver
-Requires: rpmfusion-free-release
 Requires: rpmfusion-nonfree-release
 Requires: tmux
 

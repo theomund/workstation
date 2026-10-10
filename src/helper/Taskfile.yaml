@@ -6,10 +6,10 @@
 version: "3"
 
 vars:
-  PREFIX: workstation-{{.COMPONENT}}-{{.VERSION}}-{{.RELEASE}}
+  PREFIX: workstation-{{.COMPONENT}}-{{.SUFFIX}}
   SOURCE: src/{{.COMPONENT}}
   TARGET: target/{{.COMPONENT}}
-  CONTAINER: "{{.TARGET}}/container"
+  CONTAINER: "{{.TARGET}}/container/{{.PREFIX}}-container.tar"
   CVE: "{{.TARGET}}/cve/{{.PREFIX}}-cve.txt"
   ROOTFS: "{{.TARGET}}/rootfs/{{.PREFIX}}-rootfs.tar.gz"
   RPM: "{{.TARGET}}/rpm/{{.PREFIX}}.el10.x86_64.rpm"
@@ -20,35 +20,45 @@ tasks:
   container:
     desc: Build {{.COMPONENT}} container.
     vars:
-      CONTAINERFILE: src/helper/container/Containerfile
-      STORAGE: /var/lib/containers
-      TAG: "{{.REGISTRY}}/{{.COMPONENT}}:{{.VERSION}}-{{.RELEASE}}"
+      BASE: "{{.REGISTRY}}/common:{{.SUFFIX}}"
+      CONTAINERFILE: "{{.SOURCE}}/container/Containerfile"
+      ROOT: "{{.TARGET}}/container/root"
+      TAG: "{{.REGISTRY}}/{{.COMPONENT}}:{{.SUFFIX}}"
+      TAR: target/common/container/workstation-common-{{.SUFFIX}}-container.tar
     sources:
       - "{{.CONTAINERFILE}}"
       - "{{.RPM}}"
+      - '{{if ne .COMPONENT "common"}}{{.TAR}}{{end}}'
     generates:
-      - "{{.CONTAINER}}/index.json"
+      - "{{.CONTAINER}}"
     deps:
+      - container:base
       - rpm
     cmds:
-      - task: :common:container
-        if: '{{ne .COMPONENT "common"}}'
+      - mkdir -p {{.ROOT}}
+      - defer: rm -rf {{.ROOT}}
       - podman-remote build
-        --target {{.COMPONENT}}
+        {{if ne .COMPONENT "common"}}
+        --build-arg BASE={{.BASE}}
+        {{end}}
+        {{if eq .COMPONENT "payload"}}
+        --build-arg CHUNKAH_CHOWN="$(id -u):$(id -g)"
+        --build-arg CHUNKAH_CONFIG_STR="$(podman-remote inspect {{.BASE}})"
+        --build-arg CHUNKAH_OUTPUT=$WORKSPACE_PATH/{{.ROOT}}/out
+        --security-opt label=disable
+        --skip-unused-stages=false
+        -v $WORKSPACE_PATH/{{.ROOT}}:/run/src
+        {{end}}
         -f {{.CONTAINERFILE}}
         -t {{.TAG}}
         .
-      - cmd: podman-remote run
-             --privileged
-             --rm
-             -v {{.STORAGE}}:{{.STORAGE}}
-             {{.TAG}}
-             /usr/libexec/bootc-base-imagectl
-             rechunk
-             {{.TAG}}
-             {{.TAG}}
-        if: '{{eq .COMPONENT "payload"}}'
-      - podman-remote save --format oci-dir -o {{.CONTAINER}} {{.TAG}}
+      - podman-remote save --format oci-archive -o {{.CONTAINER}} {{.TAG}}
+
+  container:base:
+    internal: true
+    if: '{{ne .COMPONENT "common"}}'
+    deps:
+      - :common:container
 
   cve:
     desc: Build {{.COMPONENT}} CVE table.
@@ -79,7 +89,7 @@ tasks:
   rpm:
     desc: Build {{.COMPONENT}} RPM package.
     vars:
-      ROOT: "{{.TARGET}}/rpm/root"
+      TOP_DIR: "{{.ROOT_DIR}}/{{.TARGET}}/rpm/root"
     sources:
       - "{{.SRPM}}"
     generates:
@@ -87,17 +97,21 @@ tasks:
     deps:
       - srpm
     cmds:
-      - mkdir -p {{.ROOT}}
-      - defer: rm -rf {{.ROOT}}
-      - rpmbuild --define "_topdir $(pwd)/{{.ROOT}}" --rebuild {{.SRPM}}
-      - cp {{.ROOT}}/RPMS/x86_64/*.rpm {{.TARGET}}/rpm
+      - defer: rm -rf {{.TOP_DIR}}
+      - rpmbuild
+        --define "_release {{.RELEASE}}"
+        --define "_rpmdir {{.ROOT_DIR}}/{{.TARGET}}/rpm"
+        --define "_rpmfilename %{NAME}-%{VERSION}-%{RELEASE}.%{ARCH}.rpm"
+        --define "_topdir {{.TOP_DIR}}"
+        --define "_version {{.VERSION}}"
+        --rebuild
+        {{.SRPM}}
 
   srpm:
     desc: Build {{.COMPONENT}} SRPM package.
     vars:
-      ROOT: "{{.TARGET}}/srpm/root"
       SPEC: "{{.SOURCE}}/srpm/workstation-{{.COMPONENT}}.spec"
-      SOURCES: "{{.ROOT}}/SOURCES"
+      TOP_DIR: "{{.ROOT_DIR}}/{{.TARGET}}/srpm/root"
     sources:
       - "{{.ROOTFS}}"
       - "{{.SPEC}}"
@@ -106,21 +120,24 @@ tasks:
     deps:
       - rootfs
     cmds:
-      - mkdir -p {{.SOURCES}}
-      - defer: rm -rf {{.ROOT}}
-      - cp {{.ROOTFS}} {{.SOURCES}}
-      - rpmbuild --define "_topdir $(pwd)/{{.ROOT}}" -bs {{.SPEC}}
-      - cp {{.ROOT}}/SRPMS/*.src.rpm {{.TARGET}}/srpm
+      - defer: rm -rf {{.TOP_DIR}}
+      - rpmbuild -bs
+        --define "_release {{.RELEASE}}"
+        --define "_sourcedir {{.ROOT_DIR}}/{{.TARGET}}/rootfs"
+        --define "_srcrpmdir {{.ROOT_DIR}}/{{.TARGET}}/srpm"
+        --define "_topdir {{.TOP_DIR}}"
+        --define "_version {{.VERSION}}"
+        {{.SPEC}}
 
   sbom:
     desc: Build {{.COMPONENT}} SBOM file.
     env:
       SYFT_GOLANG_CAPTURE_SYMBOLS: all
     sources:
-      - "{{.CONTAINER}}/index.json"
+      - "{{.CONTAINER}}"
     generates:
       - "{{.SBOM}}"
     deps:
       - container
     cmds:
-      - syft oci-dir:{{.CONTAINER}} -o syft-json={{.SBOM}}
+      - syft oci-archive:{{.CONTAINER}} -o syft-json={{.SBOM}}

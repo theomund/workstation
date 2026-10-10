@@ -25,18 +25,19 @@ dotenv: [".env"]
 
 run: when_changed
 
-env:
-  VERSION: 0.1.3
-  RELEASE: 1
-
 vars:
+  COMPONENTS: [common, installer, payload]
   REGISTRY: ghcr.io/theomund/workstation
+  VERSION: 0.2.0
+  RELEASE: 1
+  SUFFIX: "{{.VERSION}}-{{.RELEASE}}"
 
 tasks:
   ci:
     desc: Run CI/CD pipeline.
     deps:
       - iso
+      - lint
 
   clean:
     desc: Clean the project.
@@ -46,15 +47,14 @@ tasks:
   container:
     desc: Build all container images.
     deps:
-      - installer:container
-      - payload:container
+      - for: {var: COMPONENTS}
+        task: "{{.ITEM}}:container"
 
   cve:
     desc: Build all CVE tables.
     deps:
-      - common:cve
-      - installer:cve
-      - payload:cve
+      - for: {var: COMPONENTS}
+        task: "{{.ITEM}}:cve"
 
   db:
     desc: Update CVE database.
@@ -85,15 +85,14 @@ tasks:
     deps:
       - srpm
     cmds:
-      - rpmlint target/**/*.src.rpm
+      - rpmlint target/*/srpm/*.src.rpm
 
   lint:shellcheck:
     desc: Lint the shell scripts.
     cmds:
-      - find . -type f -exec file -i {} +
-        | grep shell
-        | cut -d':' -f1
-        | xargs shellcheck
+      - shellcheck
+        src/iso/upgrade/upgrade.sh
+        src/payload/rootfs/usr/libexec/workstation-payload
 
   lint:yamllint:
     desc: Lint the YAML files.
@@ -103,27 +102,23 @@ tasks:
   rootfs:
     desc: Build all root filesystem archives.
     deps:
-      - common:rootfs
-      - installer:rootfs
-      - payload:rootfs
+      - for: {var: COMPONENTS}
+        task: "{{.ITEM}}:rootfs"
 
   rpm:
     desc: Build all RPM packages.
     deps:
-      - common:rpm
-      - installer:rpm
-      - payload:rpm
+      - for: {var: COMPONENTS}
+        task: "{{.ITEM}}:rpm"
 
   sbom:
     desc: Build all SBOM files.
     deps:
-      - common:sbom
-      - installer:sbom
-      - payload:sbom
+      - for: {var: COMPONENTS}
+        task: "{{.ITEM}}:sbom"
 
   srpm:
     desc: Build all SRPM packages.
     deps:
-      - common:srpm
-      - installer:srpm
-      - payload:srpm
+      - for: {var: COMPONENTS}
+        task: "{{.ITEM}}:srpm"

@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-26.04
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Login to Container Registry
         uses: docker/login-action@v4
         with:
@@ -29,8 +29,13 @@ jobs:
           cacheFrom: ghcr.io/theomund/workstation/devcontainer
           push: always
           runCmd: task ci
-      - name: Upload Artifacts
+      - name: Upload Install ISO
         uses: actions/upload-artifact@v7
         with:
-          name: isos
-          path: target/iso/
+          archive: false
+          path: target/iso/install/*.iso
+      - name: Upload Upgrade ISO
+        uses: actions/upload-artifact@v7
+        with:
+          archive: false
+          path: target/iso/upgrade/*.iso
