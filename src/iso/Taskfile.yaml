@@ -6,8 +6,7 @@
 version: "3"
 
 vars:
-  INSTALLER: target/installer/container/index.json
-  PAYLOAD: target/payload/container/index.json
+  PAYLOAD: target/payload/container/workstation-payload-{{.SUFFIX}}-container.tar
 
 tasks:
   install:
@@ -15,8 +14,9 @@ tasks:
     vars:
       SOURCE: src/iso/install
       CONFIG: "{{.SOURCE}}/config.toml"
+      INSTALLER: target/installer/container/workstation-installer-{{.SUFFIX}}-container.tar
       TARGET: target/iso/install
-      ISO: "{{.TARGET}}/workstation-{{.VERSION}}-{{.RELEASE}}-install.iso"
+      ISO: "{{.TARGET}}/workstation-{{.SUFFIX}}-install.iso"
       ROOT: "{{.TARGET}}/root"
     sources:
       - "{{.CONFIG}}"
@@ -39,19 +39,19 @@ tasks:
         build
         --blueprint /config.toml
         --bootc-installer-payload-ref
-        {{.REGISTRY}}/payload:{{.VERSION}}-{{.RELEASE}}
+        {{.REGISTRY}}/payload:{{.SUFFIX}}
         --bootc-ref
-        {{.REGISTRY}}/installer:{{.VERSION}}-{{.RELEASE}}
+        {{.REGISTRY}}/installer:{{.SUFFIX}}
         --output-dir /output
         bootc-installer
-      - cp {{.ROOT}}/*.iso {{.ISO}}
+      - mv {{.ROOT}}/*.iso {{.ISO}}
 
   upgrade:
     desc: Build upgrade ISO image.
     vars:
       SOURCE: src/iso/upgrade
       TARGET: target/iso/upgrade
-      ISO: "{{.TARGET}}/workstation-{{.VERSION}}-{{.RELEASE}}-upgrade.iso"
+      ISO: "{{.TARGET}}/workstation-{{.SUFFIX}}-upgrade.iso"
       ROOT: "{{.TARGET}}/root"
     sources:
       - "{{.PAYLOAD}}"
@@ -63,5 +63,5 @@ tasks:
     cmds:
       - mkdir -p {{.ROOT}}
       - defer: rm -rf {{.ROOT}}
-      - cp -r {{.SOURCE}} target/payload/container {{.ROOT}}
+      - cp -r {{.SOURCE}} {{.PAYLOAD}} {{.ROOT}}
       - mkisofs -R -J -o {{.ISO}} {{.ROOT}}

@@ -20,6 +20,7 @@ EOF
 RUN bootc container lint --fatal-warnings
 
 FROM quay.io/coreos/chunkah:v0.7.0 AS rechunker
+ARG CHUNKAH_CHOWN
 ARG CHUNKAH_CONFIG_STR
 RUN --mount=from=rootfs,target=/chunkah,ro \
     --mount=type=bind,target=/run/src,rw <<'EOF'
@@ -29,6 +30,8 @@ chunkah build \
   --max-layers 128 \
   --output oci:/run/src/out \
   --prune /sysroot/
+
+chown -R ${CHUNKAH_CHOWN} /run/src/out
 EOF
 
 FROM oci:${CHUNKAH_OUTPUT} AS payload

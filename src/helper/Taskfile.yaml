@@ -6,10 +6,11 @@
 version: "3"
 
 vars:
-  PREFIX: workstation-{{.COMPONENT}}-{{.VERSION}}-{{.RELEASE}}
+  SUFFIX: "{{.VERSION}}-{{.RELEASE}}"
+  PREFIX: workstation-{{.COMPONENT}}-{{.SUFFIX}}
   SOURCE: src/{{.COMPONENT}}
   TARGET: target/{{.COMPONENT}}
-  CONTAINER: "{{.TARGET}}/container"
+  CONTAINER: "{{.TARGET}}/container/{{.PREFIX}}-container.tar"
   CVE: "{{.TARGET}}/cve/{{.PREFIX}}-cve.txt"
   ROOTFS: "{{.TARGET}}/rootfs/{{.PREFIX}}-rootfs.tar.gz"
   RPM: "{{.TARGET}}/rpm/{{.PREFIX}}.el10.x86_64.rpm"
@@ -20,35 +21,38 @@ tasks:
   container:
     desc: Build {{.COMPONENT}} container.
     vars:
-      BASE: "{{.REGISTRY}}/common:{{.VERSION}}-{{.RELEASE}}"
+      BASE: "{{.REGISTRY}}/common:{{.SUFFIX}}"
       CONTAINERFILE: "{{.SOURCE}}/container/Containerfile"
-      PAYLOAD: $WORKSPACE_PATH/target/payload
-      TAG: "{{.REGISTRY}}/{{.COMPONENT}}:{{.VERSION}}-{{.RELEASE}}"
+      ROOT: "{{.TARGET}}/container/root"
+      TAG: "{{.REGISTRY}}/{{.COMPONENT}}:{{.SUFFIX}}"
     sources:
       - "{{.CONTAINERFILE}}"
       - "{{.RPM}}"
     generates:
-      - "{{.CONTAINER}}/index.json"
+      - "{{.CONTAINER}}"
     deps:
       - rpm
     cmds:
       - task: :common:container
         if: '{{ne .COMPONENT "common"}}'
+      - mkdir -p {{.ROOT}}
+      - defer: rm -rf {{.ROOT}}
       - podman-remote build
         {{if ne .COMPONENT "common"}}
         --build-arg BASE={{.BASE}}
         {{end}}
         {{if eq .COMPONENT "payload"}}
+        --build-arg CHUNKAH_CHOWN="$(id -u):$(id -g)"
         --build-arg CHUNKAH_CONFIG_STR="$(podman-remote inspect {{.BASE}})"
-        --build-arg CHUNKAH_OUTPUT={{.PAYLOAD}}/out
+        --build-arg CHUNKAH_OUTPUT=$WORKSPACE_PATH/{{.ROOT}}/out
         --security-opt label=disable
         --skip-unused-stages=false
-        -v {{.PAYLOAD}}:/run/src
+        -v $WORKSPACE_PATH/{{.ROOT}}:/run/src
         {{end}}
         -f {{.CONTAINERFILE}}
         -t {{.TAG}}
         .
-      - podman-remote save --format oci-dir -o {{.CONTAINER}} {{.TAG}}
+      - podman-remote save --format oci-archive -o {{.CONTAINER}} {{.TAG}}
 
   cve:
     desc: Build {{.COMPONENT}} CVE table.
@@ -90,7 +94,7 @@ tasks:
       - mkdir -p $TOP_DIR
       - defer: rm -rf $TOP_DIR
       - rpmbuild --rebuild {{.SRPM}}
-      - cp $TOP_DIR/RPMS/x86_64/*.rpm {{.TARGET}}/rpm
+      - mv $TOP_DIR/RPMS/x86_64/*.rpm {{.TARGET}}/rpm
 
   srpm:
     desc: Build {{.COMPONENT}} SRPM package.
@@ -111,17 +115,17 @@ tasks:
       - defer: rm -rf $TOP_DIR
       - cp {{.ROOTFS}} {{.SOURCES}}
       - rpmbuild -bs {{.SPEC}}
-      - cp $TOP_DIR/SRPMS/*.src.rpm {{.TARGET}}/srpm
+      - mv $TOP_DIR/SRPMS/*.src.rpm {{.TARGET}}/srpm
 
   sbom:
     desc: Build {{.COMPONENT}} SBOM file.
     env:
       SYFT_GOLANG_CAPTURE_SYMBOLS: all
     sources:
-      - "{{.CONTAINER}}/index.json"
+      - "{{.CONTAINER}}"
     generates:
       - "{{.SBOM}}"
     deps:
       - container
     cmds:
-      - syft oci-dir:{{.CONTAINER}} -o syft-json={{.SBOM}}
+      - syft oci-archive:{{.CONTAINER}} -o syft-json={{.SBOM}}

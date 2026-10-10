@@ -4,5 +4,8 @@
 
 #!/bin/sh
 
-sudo bootc switch --apply --soft-reboot=auto --transport=oci /media/cdrom/container
-sudo bootc upgrade --apply --soft-reboot=auto
+sudo bootc switch \
+  --apply \
+  --soft-reboot=auto \
+  --transport=oci-archive \
+  /media/cdrom/*.tar
