@@ -2,8 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-ARG BASE
-
 FROM quay.io/almalinuxorg/almalinux-bootc:10.2-20261009 AS common
 RUN --mount=type=bind,source=target/common/rpm,target=/tmp/RPMS,ro,z \
     --mount=type=tmpfs,target=/run \

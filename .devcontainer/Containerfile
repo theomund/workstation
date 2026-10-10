@@ -24,6 +24,8 @@ useradd -m -G wheel developer
 EOF
 COPY --chown=developer:developer <<'EOF' /home/developer/.rpmmacros
 %_release %{getenv:RELEASE}
+%_sourcedir %{getenv:ROOTFS_DIR}
+%_srcrpmdir %{getenv:SRPM_DIR}
 %_topdir  %{getenv:TOP_DIR}
 %_version %{getenv:VERSION}
 EOF

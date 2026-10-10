@@ -30,14 +30,16 @@ env:
   RELEASE: 1
 
 vars:
+  COMPONENTS: [common, installer, payload]
   REGISTRY: ghcr.io/theomund/workstation
+  SUFFIX: "{{.VERSION}}-{{.RELEASE}}"
 
 tasks:
   ci:
     desc: Run CI/CD pipeline.
     deps:
-      - lint
       - iso
+      - lint
 
   clean:
     desc: Clean the project.
@@ -53,9 +55,8 @@ tasks:
   cve:
     desc: Build all CVE tables.
     deps:
-      - common:cve
-      - installer:cve
-      - payload:cve
+      - for: {var: COMPONENTS}
+        task: "{{.ITEM}}:cve"
 
   db:
     desc: Update CVE database.
@@ -91,10 +92,9 @@ tasks:
   lint:shellcheck:
     desc: Lint the shell scripts.
     cmds:
-      - find . -type f -exec file -i {} +
-        | grep shell
-        | cut -d':' -f1
-        | xargs shellcheck
+      - shellcheck
+        src/iso/upgrade/upgrade.sh
+        src/payload/rootfs/usr/libexec/workstation-payload
 
   lint:yamllint:
     desc: Lint the YAML files.
@@ -104,27 +104,23 @@ tasks:
   rootfs:
     desc: Build all root filesystem archives.
     deps:
-      - common:rootfs
-      - installer:rootfs
-      - payload:rootfs
+      - for: {var: COMPONENTS}
+        task: "{{.ITEM}}:rootfs"
 
   rpm:
     desc: Build all RPM packages.
     deps:
-      - common:rpm
-      - installer:rpm
-      - payload:rpm
+      - for: {var: COMPONENTS}
+        task: "{{.ITEM}}:rpm"
 
   sbom:
     desc: Build all SBOM files.
     deps:
-      - common:sbom
-      - installer:sbom
-      - payload:sbom
+      - for: {var: COMPONENTS}
+        task: "{{.ITEM}}:sbom"
 
   srpm:
     desc: Build all SRPM packages.
     deps:
-      - common:srpm
-      - installer:srpm
-      - payload:srpm
+      - for: {var: COMPONENTS}
+        task: "{{.ITEM}}:srpm"

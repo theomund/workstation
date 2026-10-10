@@ -14,13 +14,5 @@ log_message() {
   fi
 }
 
-install_flatpaks() {
-  log_message "Installing Flatpak applications."
-  flatpak preinstall -y --noninteractive
-}
-
-main() {
-  install_flatpaks
-}
-
-main "$@"
+log_message "Installing Flatpak applications."
+flatpak preinstall -y --noninteractive

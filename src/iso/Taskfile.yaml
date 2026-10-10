@@ -53,7 +53,6 @@ tasks:
       SOURCE: src/iso/upgrade
       TARGET: target/iso/upgrade
       ISO: "{{.TARGET}}/workstation-{{.SUFFIX}}-upgrade.iso"
-      ROOT: "{{.TARGET}}/root"
     sources:
       - "{{.PAYLOAD}}"
       - "{{.SOURCE}}/upgrade.sh"
@@ -62,7 +61,5 @@ tasks:
     deps:
       - :payload:container
     cmds:
-      - mkdir -p {{.ROOT}}
-      - defer: rm -rf {{.ROOT}}
-      - cp -r {{.SOURCE}}/* {{.PAYLOAD}} {{.ROOT}}
-      - mkisofs -R -J -o {{.ISO}} {{.ROOT}}
+      - mkdir -p {{.TARGET}}
+      - mkisofs -R -J -o {{.ISO}} {{.SOURCE}} {{.PAYLOAD}}

@@ -6,7 +6,6 @@
 version: "3"
 
 vars:
-  SUFFIX: "{{.VERSION}}-{{.RELEASE}}"
   PREFIX: workstation-{{.COMPONENT}}-{{.SUFFIX}}
   SOURCE: src/{{.COMPONENT}}
   TARGET: target/{{.COMPONENT}}
@@ -99,10 +98,11 @@ tasks:
   srpm:
     desc: Build {{.COMPONENT}} SRPM package.
     env:
-      TOP_DIR: "{{.ROOT_DIR}}/{{.TARGET}}/srpm/root"
+      ROOTFS_DIR: "{{.ROOT_DIR}}/{{.TARGET}}/rootfs"
+      SRPM_DIR: "{{.ROOT_DIR}}/{{.TARGET}}/srpm"
+      TOP_DIR: "{{.SRPM_DIR}}/root"
     vars:
       SPEC: "{{.SOURCE}}/srpm/workstation-{{.COMPONENT}}.spec"
-      SOURCES: $TOP_DIR/SOURCES
     sources:
       - "{{.ROOTFS}}"
       - "{{.SPEC}}"
@@ -111,11 +111,8 @@ tasks:
     deps:
       - rootfs
     cmds:
-      - mkdir -p {{.SOURCES}}
       - defer: rm -rf $TOP_DIR
-      - cp {{.ROOTFS}} {{.SOURCES}}
       - rpmbuild -bs {{.SPEC}}
-      - mv $TOP_DIR/SRPMS/*.src.rpm {{.TARGET}}/srpm
 
   sbom:
     desc: Build {{.COMPONENT}} SBOM file.
