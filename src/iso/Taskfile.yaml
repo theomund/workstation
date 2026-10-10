@@ -5,60 +5,60 @@
 ---
 version: "3"
 
-vars:
-  TAR: "{{.SUFFIX}}-container.tar"
-  PAYLOAD: target/payload/container/workstation-payload-{{.TAR}}
-
 tasks:
   install:
     desc: Build installation ISO image.
     vars:
-      CONFIG: "src/iso/install/config.toml"
-      INSTALLER: target/installer/container/workstation-installer-{{.TAR}}
+      CONFIG: src/iso/install/config.toml
+      STORAGE: /var/lib/containers/storage
+
       TARGET: target/iso/install
-      ISO: "{{.TARGET}}/workstation-{{.SUFFIX}}-install.iso"
+      ISO: "{{.TARGET}}/{{.G_NAME}}-{{.G_SUFFIX}}-install.iso"
       ROOT: "{{.TARGET}}/root"
     sources:
       - "{{.CONFIG}}"
-      - "{{.INSTALLER}}"
-      - "{{.PAYLOAD}}"
+      - target/installer/container/{{.G_NAME}}-installer-{{.G_SUFFIX}}-iid.txt
+      - target/payload/container/{{.G_NAME}}-payload-{{.G_SUFFIX}}-iid.txt
     generates:
       - "{{.ISO}}"
     deps:
       - :container
     cmds:
-      - mkdir -p {{.ROOT}}
-      - defer: rm -rf {{.ROOT}}
+      - mkdir -p "{{.ROOT}}"
+      - defer: rm -rf "{{.ROOT}}"
       - podman-remote run
         --privileged
         --rm
-        -v /var/lib/containers/storage:/var/lib/containers/storage
-        -v $WORKSPACE_PATH/{{.CONFIG}}:/config.toml
-        -v $WORKSPACE_PATH/{{.ROOT}}:/output
+        -v "{{.STORAGE}}:{{.STORAGE}}"
+        -v "$WORKSPACE_PATH/{{.CONFIG}}:/config.toml"
+        -v "$WORKSPACE_PATH/{{.ROOT}}:/output"
         ghcr.io/osbuild/image-builder:v86.0.0
         build
-        --blueprint /config.toml
+        --blueprint "/config.toml"
         --bootc-installer-payload-ref
-        {{.REGISTRY}}/payload:{{.SUFFIX}}
+        {{.G_REGISTRY}}/payload:{{.G_SUFFIX}}
         --bootc-ref
-        {{.REGISTRY}}/installer:{{.SUFFIX}}
-        --output-dir /output
+        {{.G_REGISTRY}}/installer:{{.G_SUFFIX}}
+        --output-dir "/output"
         bootc-installer
-      - mv {{.ROOT}}/*.iso {{.ISO}}
+      - mv "{{.ROOT}}"/*.iso "{{.ISO}}"
 
   upgrade:
     desc: Build upgrade ISO image.
     vars:
+      PAYLOAD: >-
+        target/payload/container/{{.G_NAME}}-payload-{{.G_SUFFIX}}-oci.tar
       SOURCE: src/iso/upgrade
+
       TARGET: target/iso/upgrade
-      ISO: "{{.TARGET}}/workstation-{{.SUFFIX}}-upgrade.iso"
+      ISO: "{{.TARGET}}/{{.G_NAME}}-{{.G_SUFFIX}}-upgrade.iso"
     sources:
       - "{{.PAYLOAD}}"
       - "{{.SOURCE}}/upgrade.sh"
     generates:
       - "{{.ISO}}"
     deps:
-      - :payload:container
+      - :payload:oci
     cmds:
-      - mkdir -p {{.TARGET}}
-      - mkisofs -R -J -o {{.ISO}} {{.SOURCE}} {{.PAYLOAD}}
+      - mkdir -p "{{.TARGET}}"
+      - mkisofs -R -J -o "{{.ISO}}" "{{.SOURCE}}" "{{.PAYLOAD}}"

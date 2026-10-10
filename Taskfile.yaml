@@ -9,37 +9,38 @@ includes:
   common:
     taskfile: src/helper/Taskfile.yaml
     vars:
-      COMPONENT: common
+      G_COMPONENT: common
   installer:
     taskfile: src/helper/Taskfile.yaml
     vars:
-      COMPONENT: installer
+      G_COMPONENT: installer
   iso:
     taskfile: src/iso/Taskfile.yaml
   payload:
     taskfile: src/helper/Taskfile.yaml
     vars:
-      COMPONENT: payload
+      G_COMPONENT: payload
 
 dotenv: [".env"]
 
 run: when_changed
 
 env:
-  VERSION: 0.2.0
   RELEASE: 1
+  VERSION: 0.2.0
 
 vars:
-  COMPONENTS: [common, installer, payload]
-  REGISTRY: ghcr.io/theomund/workstation
-  SUFFIX: $VERSION-$RELEASE
+  G_COMPONENTS: [common, installer, payload]
+  G_NAME: workstation
+  G_REGISTRY: ghcr.io/theomund/{{.G_NAME}}
+  G_SUFFIX: "{{.VERSION}}-{{.RELEASE}}"
 
 tasks:
   ci:
     desc: Run CI/CD pipeline.
-    deps:
-      - iso
+    cmds:
       - lint
+      - iso
 
   clean:
     desc: Clean the project.
@@ -49,13 +50,13 @@ tasks:
   container:
     desc: Build all container images.
     deps:
-      - for: {var: COMPONENTS}
+      - for: {var: G_COMPONENTS}
         task: "{{.ITEM}}:container"
 
   cve:
     desc: Build all CVE tables.
     deps:
-      - for: {var: COMPONENTS}
+      - for: {var: G_COMPONENTS}
         task: "{{.ITEM}}:cve"
 
   db:
@@ -87,34 +88,34 @@ tasks:
     deps:
       - rpm
     cmds:
-      - rpmlint target/*/rpm/*.src.rpm
+      - rpmlint "target/"*"/rpm/"*".src.rpm"
 
   lint:shellcheck:
     desc: Lint the shell scripts.
     cmds:
       - shellcheck
-        src/iso/upgrade/upgrade.sh
-        src/payload/rootfs/usr/libexec/workstation-payload
+        "src/iso/upgrade/upgrade.sh"
+        "src/payload/rootfs/usr/libexec/{{.G_NAME}}-payload"
 
   lint:yamllint:
     desc: Lint the YAML files.
     cmds:
-      - yamllint .
+      - yamllint "."
 
   rootfs:
     desc: Build all root filesystem archives.
     deps:
-      - for: {var: COMPONENTS}
+      - for: {var: G_COMPONENTS}
         task: "{{.ITEM}}:rootfs"
 
   rpm:
     desc: Build all RPM packages.
     deps:
-      - for: {var: COMPONENTS}
+      - for: {var: G_COMPONENTS}
         task: "{{.ITEM}}:rpm"
 
   sbom:
     desc: Build all SBOM files.
     deps:
-      - for: {var: COMPONENTS}
+      - for: {var: G_COMPONENTS}
         task: "{{.ITEM}}:sbom"
