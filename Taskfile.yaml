@@ -30,6 +30,13 @@ vars:
   G_TAG_FORMAT: "{{.G_REGISTRY}}/%s:{{.G_SUFFIX}}"
 
 tasks:
+  build:*:
+    desc: Build an artifact type for all components.
+    vars: {TYPE: "{{index .MATCH 0}}"}
+    deps:
+      - for: {var: G_COMPONENTS}
+        task: "{{.ITEM}}:{{.TYPE}}"
+
   ci:
     desc: Run CI/CD pipeline.
     cmds: [{task: lint}, {task: iso}]
@@ -37,14 +44,6 @@ tasks:
   clean:
     desc: Clean the project.
     cmd: git clean -fdxe '.env'
-
-  container:
-    desc: Build all container images.
-    deps: &components
-      - for: {var: G_COMPONENTS}
-        task: "{{.ITEM}}:{{.TASK}}"
-
-  cve: {desc: "Build all CVE tables.", deps: *components}
 
   db:
     desc: Update CVE database.
@@ -65,7 +64,7 @@ tasks:
 
   lint:rpmlint:
     desc: Lint the RPM packages.
-    deps: [rpm]
+    deps: [build:rpm]
     cmd: rpmlint "target/"*"/rpm/"*".src.rpm"
 
   lint:shellcheck:
@@ -77,9 +76,3 @@ tasks:
   lint:yamllint:
     desc: Lint the YAML files.
     cmd: yamllint "."
-
-  rootfs: {desc: "Build all root filesystem archives.", deps: *components}
-
-  rpm: {desc: "Build all RPM packages.", deps: *components}
-
-  sbom: {desc: "Build all SBOM files.", deps: *components}

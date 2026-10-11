@@ -6,7 +6,7 @@
 version: "3"
 
 vars:
-  G_COMPONENT: '{{index (splitList ":" .TASK) 0}}'
+  G_COMPONENT: '{{splitList ":" .TASK | first}}'
   G_CONTAINER: "{{printf .G_CONTAINER_FORMAT .G_COMPONENT}}"
   G_OCI: "{{printf .G_OCI_FORMAT .G_COMPONENT}}"
   G_PREFIX: "{{.G_NAME}}-{{.G_COMPONENT}}-{{.G_SUFFIX}}"
@@ -38,9 +38,7 @@ tasks:
       - defer: rm -rf "{{.ROOT}}"
       - podman-remote build
         --iidfile "{{.G_CONTAINER}}"
-        {{if ne .G_COMPONENT "common"}}
-        --build-arg BASE={{.BASE_TAG}}
-        {{end}}
+        {{if ne .G_COMPONENT "common"}}--build-arg BASE={{.BASE_TAG}}{{end}}
         {{if eq .G_COMPONENT "payload"}}
         --build-arg CHUNKAH_CHOWN="$(id -u):$(id -g)"
         --build-arg CHUNKAH_CONFIG_STR="$(podman-remote inspect {{.BASE_TAG}})"
@@ -92,13 +90,10 @@ tasks:
     cmds:
       - defer: rm -rf "{{.TOP_DIR}}"
       - rpmbuild
-        --define "_rpmdir {{.ROOT_DIR}}/{{dir .G_RPM}}"
-        --define "_rpmfilename %{NAME}-%{VERSION}-%{RELEASE}.%{ARCH}.rpm"
-        --define "_sourcedir {{.ROOT_DIR}}/{{dir .G_ROOTFS}}"
-        --define "_srcrpmdir %{_rpmdir}"
-        --define "_topdir {{.TOP_DIR}}"
-        -ba
-        "{{.SPEC}}"
+        -D "_rpmdir {{.ROOT_DIR}}/{{dir .G_RPM}}"
+        -D "_sourcedir {{.ROOT_DIR}}/{{dir .G_ROOTFS}}"
+        -D "_topdir {{.TOP_DIR}}"
+        -ba "{{.SPEC}}"
 
   sbom:
     desc: Build {{.G_COMPONENT}} SBOM file.

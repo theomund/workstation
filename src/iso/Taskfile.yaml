@@ -16,7 +16,7 @@ tasks:
       - '{{printf .G_CONTAINER_FORMAT "installer"}}'
       - '{{printf .G_CONTAINER_FORMAT "payload"}}'
     generates: ["{{.ISO}}"]
-    deps: [":container"]
+    deps: [":build:container"]
     cmds:
       - mkdir -p "{{.ROOT}}"
       - defer: rm -rf "{{.ROOT}}"
