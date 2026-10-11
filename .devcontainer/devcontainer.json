@@ -6,18 +6,11 @@
 
 {
   "name": "workstation",
-  "build": {
-    "dockerfile": "Containerfile"
-  },
-  "containerEnv": {
-    "WORKSPACE_PATH": "${localWorkspaceFolder}"
-  },
+  "build": {"dockerfile": "Containerfile"},
+  "containerEnv": {"WORKSPACE_PATH": "${localWorkspaceFolder}"},
   "customizations": {
     "vscode": {
-      "extensions": [
-        "ms-azuretools.vscode-containers",
-        "task.vscode-task"
-      ]
+      "extensions": ["ms-azuretools.vscode-containers", "task.vscode-task"]
     }
   },
   "initializeCommand": "sudo systemctl start podman.socket && sudo chown -R $(id -u):$(id -g) /run/podman",

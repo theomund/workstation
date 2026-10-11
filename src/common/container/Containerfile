@@ -7,10 +7,9 @@ RUN --mount=type=bind,source=target/common/rpm,target=/tmp/RPMS,z \
     --mount=type=tmpfs,target=/run \
     --mount=type=tmpfs,target=/var/cache \
     --mount=type=tmpfs,target=/var/lib \
-    --mount=type=tmpfs,target=/var/log <<'EOF'
+    --mount=type=tmpfs,target=/var/log \
 dnf install -y \
   https://download1.rpmfusion.org/free/el/rpmfusion-free-release-10.noarch.rpm \
   https://download1.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-10.noarch.rpm \
   /tmp/RPMS/*.rpm
-EOF
 RUN bootc container lint --fatal-warnings

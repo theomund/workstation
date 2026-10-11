@@ -6,138 +6,109 @@
 version: "3"
 
 vars:
-  PREFIX: workstation-{{.COMPONENT}}-{{.SUFFIX}}
-  SOURCE: src/{{.COMPONENT}}
-  TARGET: target/{{.COMPONENT}}
-  CONTAINER: "{{.TARGET}}/container/{{.PREFIX}}-container.tar"
-  CVE: "{{.TARGET}}/cve/{{.PREFIX}}-cve.txt"
-  ROOTFS: "{{.TARGET}}/rootfs/{{.PREFIX}}-rootfs.tar.gz"
-  RPM: "{{.TARGET}}/rpm/{{.PREFIX}}.el10.x86_64.rpm"
-  SBOM: "{{.TARGET}}/sbom/{{.PREFIX}}-sbom.json"
-  SRPM: "{{.TARGET}}/srpm/{{.PREFIX}}.el10.src.rpm"
+  G_COMPONENT: '{{index (splitList ":" .TASK) 0}}'
+  G_CONTAINER: "{{printf .G_CONTAINER_FORMAT .G_COMPONENT}}"
+  G_OCI: "{{printf .G_OCI_FORMAT .G_COMPONENT}}"
+  G_PREFIX: "{{.G_NAME}}-{{.G_COMPONENT}}-{{.G_SUFFIX}}"
+  G_SOURCE: src/{{.G_COMPONENT}}
+  G_TAG: "{{printf .G_TAG_FORMAT .G_COMPONENT}}"
+
+  G_TARGET: target/{{.G_COMPONENT}}
+  G_ROOTFS: "{{.G_TARGET}}/rootfs/{{.G_PREFIX}}-rootfs.tar.gz"
+  G_RPM: "{{.G_TARGET}}/rpm/{{.G_PREFIX}}.el10.x86_64.rpm"
+  G_SBOM: "{{.G_TARGET}}/sbom/{{.G_PREFIX}}-sbom.json"
 
 tasks:
   container:
-    desc: Build {{.COMPONENT}} container.
+    desc: Build {{.G_COMPONENT}} container.
     vars:
-      BASE: "{{.REGISTRY}}/common:{{.SUFFIX}}"
-      CONTAINERFILE: "{{.SOURCE}}/container/Containerfile"
-      ROOT: "{{.TARGET}}/container/root"
-      TAG: "{{.REGISTRY}}/{{.COMPONENT}}:{{.SUFFIX}}"
-      TAR: target/common/container/workstation-common-{{.SUFFIX}}-container.tar
+      BASE_ID: '{{printf .G_CONTAINER_FORMAT "common"}}'
+      BASE_TAG: '{{printf .G_TAG_FORMAT "common"}}'
+      CONTAINERFILE: "{{.G_SOURCE}}/container/Containerfile"
+      ROOT: "{{.G_TARGET}}/container/root"
     sources:
       - "{{.CONTAINERFILE}}"
-      - "{{.RPM}}"
-      - '{{if ne .COMPONENT "common"}}{{.TAR}}{{end}}'
-    generates:
-      - "{{.CONTAINER}}"
-    deps:
-      - container:base
-      - rpm
+      - "{{.G_RPM}}"
+      - '{{if ne .G_COMPONENT "common"}}{{.BASE_ID}}{{end}}'
+    generates: ["{{.G_CONTAINER}}"]
+    deps: [container:base, rpm]
+    status: ["podman-remote image exists {{.G_TAG}}"]
     cmds:
-      - mkdir -p {{.ROOT}}
-      - defer: rm -rf {{.ROOT}}
+      - mkdir -p "{{.ROOT}}"
+      - defer: rm -rf "{{.ROOT}}"
       - podman-remote build
-        {{if ne .COMPONENT "common"}}
-        --build-arg BASE={{.BASE}}
+        --iidfile "{{.G_CONTAINER}}"
+        {{if ne .G_COMPONENT "common"}}
+        --build-arg BASE={{.BASE_TAG}}
         {{end}}
-        {{if eq .COMPONENT "payload"}}
+        {{if eq .G_COMPONENT "payload"}}
         --build-arg CHUNKAH_CHOWN="$(id -u):$(id -g)"
-        --build-arg CHUNKAH_CONFIG_STR="$(podman-remote inspect {{.BASE}})"
-        --build-arg CHUNKAH_OUTPUT=$WORKSPACE_PATH/{{.ROOT}}/out
+        --build-arg CHUNKAH_CONFIG_STR="$(podman-remote inspect {{.BASE_TAG}})"
+        --build-arg CHUNKAH_OUTPUT="$WORKSPACE_PATH/{{.ROOT}}/out"
         --security-opt label=disable
         --skip-unused-stages=false
-        -v $WORKSPACE_PATH/{{.ROOT}}:/run/src
+        -v "$WORKSPACE_PATH/{{.ROOT}}:/run/src"
         {{end}}
-        -f {{.CONTAINERFILE}}
-        -t {{.TAG}}
-        .
-      - podman-remote save --format oci-archive -o {{.CONTAINER}} {{.TAG}}
+        -f "{{.CONTAINERFILE}}"
+        -t {{.G_TAG}}
+        "."
+
+  cve:
+    desc: Build {{.G_COMPONENT}} CVE table.
+    env: {NO_COLOR: "1"}
+    vars: {CVE: "{{.G_TARGET}}/cve/{{.G_PREFIX}}-cve.txt"}
+    sources: ["{{.G_SBOM}}"]
+    generates: ["{{.CVE}}"]
+    deps: [":db", sbom]
+    cmd: grype sbom:"{{.G_SBOM}}" -o table="{{.CVE}}"
+
+  oci:
+    desc: Build {{.G_COMPONENT}} container archive.
+    sources: ["{{.G_CONTAINER}}"]
+    generates: ["{{.G_OCI}}"]
+    deps: [container]
+    cmds:
+      - mkdir -p "{{dir .G_OCI}}"
+      - podman-remote save --format oci-archive -o "{{.G_OCI}}" {{.G_TAG}}
+
+  rootfs:
+    desc: Build {{.G_COMPONENT}} root filesystem archive.
+    vars: {FILES: "{{.G_SOURCE}}/rootfs"}
+    sources: ["{{.FILES}}/**/*"]
+    generates: ["{{.G_ROOTFS}}"]
+    cmds:
+      - mkdir -p "{{dir .G_ROOTFS}}"
+      - tar --exclude '.gitkeep' -czvf "{{.G_ROOTFS}}" -C "{{.FILES}}" "."
+
+  rpm:
+    desc: Build {{.G_COMPONENT}} SRPM/RPM package.
+    vars:
+      SPEC: "{{.G_SOURCE}}/rpm/{{.G_NAME}}-{{.G_COMPONENT}}.spec"
+      SRPM: "{{.G_TARGET}}/rpm/{{.G_PREFIX}}.el10.src.rpm"
+      TOP_DIR: "{{.ROOT_DIR}}/{{.G_TARGET}}/rpm/root"
+    sources: ["{{.G_ROOTFS}}", "{{.SPEC}}"]
+    generates: ["{{.G_RPM}}", "{{.SRPM}}"]
+    deps: [rootfs]
+    cmds:
+      - defer: rm -rf "{{.TOP_DIR}}"
+      - rpmbuild
+        --define "_rpmdir {{.ROOT_DIR}}/{{dir .G_RPM}}"
+        --define "_rpmfilename %{NAME}-%{VERSION}-%{RELEASE}.%{ARCH}.rpm"
+        --define "_sourcedir {{.ROOT_DIR}}/{{dir .G_ROOTFS}}"
+        --define "_srcrpmdir {{.ROOT_DIR}}/{{dir .SRPM}}"
+        --define "_topdir {{.TOP_DIR}}"
+        -ba
+        "{{.SPEC}}"
+
+  sbom:
+    desc: Build {{.G_COMPONENT}} SBOM file.
+    env: {SYFT_GOLANG_CAPTURE_SYMBOLS: all}
+    sources: ["{{.G_OCI}}"]
+    generates: ["{{.G_SBOM}}"]
+    deps: [oci]
+    cmd: syft oci-archive:"{{.G_OCI}}" -o syft-json="{{.G_SBOM}}"
 
   container:base:
     internal: true
-    if: '{{ne .COMPONENT "common"}}'
-    deps:
-      - :common:container
-
-  cve:
-    desc: Build {{.COMPONENT}} CVE table.
-    env:
-      NO_COLOR: "1"
-    sources:
-      - "{{.SBOM}}"
-    generates:
-      - "{{.CVE}}"
-    deps:
-      - :db
-      - sbom
-    cmds:
-      - grype sbom:{{.SBOM}} -o table={{.CVE}}
-
-  rootfs:
-    desc: Build {{.COMPONENT}} root filesystem archive.
-    vars:
-      FILES: "{{.SOURCE}}/rootfs"
-    sources:
-      - "{{.FILES}}/**/*"
-    generates:
-      - "{{.ROOTFS}}"
-    cmds:
-      - mkdir -p {{.TARGET}}/rootfs
-      - tar --exclude '.gitkeep' -czvf {{.ROOTFS}} -C {{.FILES}} .
-
-  rpm:
-    desc: Build {{.COMPONENT}} RPM package.
-    vars:
-      TOP_DIR: "{{.ROOT_DIR}}/{{.TARGET}}/rpm/root"
-    sources:
-      - "{{.SRPM}}"
-    generates:
-      - "{{.RPM}}"
-    deps:
-      - srpm
-    cmds:
-      - defer: rm -rf {{.TOP_DIR}}
-      - rpmbuild
-        --define "_release {{.RELEASE}}"
-        --define "_rpmdir {{.ROOT_DIR}}/{{.TARGET}}/rpm"
-        --define "_rpmfilename %{NAME}-%{VERSION}-%{RELEASE}.%{ARCH}.rpm"
-        --define "_topdir {{.TOP_DIR}}"
-        --define "_version {{.VERSION}}"
-        --rebuild
-        {{.SRPM}}
-
-  srpm:
-    desc: Build {{.COMPONENT}} SRPM package.
-    vars:
-      SPEC: "{{.SOURCE}}/srpm/workstation-{{.COMPONENT}}.spec"
-      TOP_DIR: "{{.ROOT_DIR}}/{{.TARGET}}/srpm/root"
-    sources:
-      - "{{.ROOTFS}}"
-      - "{{.SPEC}}"
-    generates:
-      - "{{.SRPM}}"
-    deps:
-      - rootfs
-    cmds:
-      - defer: rm -rf {{.TOP_DIR}}
-      - rpmbuild -bs
-        --define "_release {{.RELEASE}}"
-        --define "_sourcedir {{.ROOT_DIR}}/{{.TARGET}}/rootfs"
-        --define "_srcrpmdir {{.ROOT_DIR}}/{{.TARGET}}/srpm"
-        --define "_topdir {{.TOP_DIR}}"
-        --define "_version {{.VERSION}}"
-        {{.SPEC}}
-
-  sbom:
-    desc: Build {{.COMPONENT}} SBOM file.
-    env:
-      SYFT_GOLANG_CAPTURE_SYMBOLS: all
-    sources:
-      - "{{.CONTAINER}}"
-    generates:
-      - "{{.SBOM}}"
-    deps:
-      - container
-    cmds:
-      - syft oci-archive:{{.CONTAINER}} -o syft-json={{.SBOM}}
+    if: '{{ne .G_COMPONENT "common"}}'
+    deps: [":common:container"]

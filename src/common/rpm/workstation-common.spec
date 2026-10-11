@@ -10,17 +10,13 @@ License: MPL-2.0
 ExclusiveArch: x86_64
 URL: https://github.com/theomund/workstation
 Source0: file://%{name}-%{_version}-%{_release}-rootfs.tar.gz
-Requires: almalinux-release-nvidia-driver
-Requires: rpmfusion-nonfree-release
-Requires: tmux
+Requires: almalinux-release-nvidia-driver, rpmfusion-nonfree-release, tmux
 
 %description
 %{summary}
 
 %prep
-
 %build
-
 %check
 
 %install

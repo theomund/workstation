@@ -6,119 +6,81 @@
 version: "3"
 
 includes:
-  common:
-    taskfile: src/helper/Taskfile.yaml
-    vars:
-      COMPONENT: common
-  installer:
-    taskfile: src/helper/Taskfile.yaml
-    vars:
-      COMPONENT: installer
-  iso:
-    taskfile: src/iso/Taskfile.yaml
-  payload:
-    taskfile: src/helper/Taskfile.yaml
-    vars:
-      COMPONENT: payload
+  common: "{{.G_HELPER}}"
+  installer: "{{.G_HELPER}}"
+  iso: src/iso
+  payload: "{{.G_HELPER}}"
 
 dotenv: [".env"]
 
 run: when_changed
 
+env: {RELEASE: 1, VERSION: 0.3.0}
+
 vars:
-  COMPONENTS: [common, installer, payload]
-  REGISTRY: ghcr.io/theomund/workstation
-  VERSION: 0.2.0
-  RELEASE: 1
-  SUFFIX: "{{.VERSION}}-{{.RELEASE}}"
+  G_COMPONENTS: [common, installer, payload]
+  G_HELPER: src/helper
+  G_NAME: workstation
+  G_REGISTRY: ghcr.io/theomund/{{.G_NAME}}
+  G_SUFFIX: "{{.VERSION}}-{{.RELEASE}}"
+
+  G_CONTAINER_FORMAT: >-
+    target/%[1]s/container/{{.G_NAME}}-%[1]s-{{.G_SUFFIX}}-iid.txt
+  G_ISO_FORMAT: target/iso/%[1]s/{{.G_NAME}}-{{.G_SUFFIX}}-%[1]s.iso
+  G_OCI_FORMAT: target/%[1]s/oci/{{.G_NAME}}-%[1]s-{{.G_SUFFIX}}-oci.tar
+  G_TAG_FORMAT: "{{.G_REGISTRY}}/%s:{{.G_SUFFIX}}"
 
 tasks:
   ci:
     desc: Run CI/CD pipeline.
-    deps:
-      - iso
-      - lint
+    cmds: [{task: lint}, {task: iso}]
 
   clean:
     desc: Clean the project.
-    cmds:
-      - git clean -fdxe '.env'
+    cmd: git clean -fdxe '.env'
 
   container:
     desc: Build all container images.
-    deps:
-      - for: {var: COMPONENTS}
-        task: "{{.ITEM}}:container"
+    deps: &components
+      - for: {var: G_COMPONENTS}
+        task: "{{.ITEM}}:{{.TASK}}"
 
-  cve:
-    desc: Build all CVE tables.
-    deps:
-      - for: {var: COMPONENTS}
-        task: "{{.ITEM}}:cve"
+  cve: {desc: "Build all CVE tables.", deps: *components}
 
   db:
     desc: Update CVE database.
-    cmds:
-      - grype db update
+    cmd: grype db update
 
   default:
     desc: Print project tasks.
     silent: true
-    cmds:
-      - task -l
+    cmd: task -l
 
   iso:
     desc: Build all ISO images.
-    deps:
-      - iso:install
-      - iso:upgrade
+    deps: [iso:install, iso:upgrade]
 
   lint:
     desc: Lint the source code.
-    deps:
-      - lint:rpmlint
-      - lint:shellcheck
-      - lint:yamllint
+    deps: [lint:rpmlint, lint:shellcheck, lint:yamllint]
 
   lint:rpmlint:
-    desc: Lint the SRPM packages.
-    deps:
-      - srpm
-    cmds:
-      - rpmlint target/*/srpm/*.src.rpm
+    desc: Lint the RPM packages.
+    deps: [rpm]
+    cmd: rpmlint "target/"*"/rpm/"*".src.rpm"
 
   lint:shellcheck:
     desc: Lint the shell scripts.
-    cmds:
-      - shellcheck
-        src/iso/upgrade/upgrade.sh
-        src/payload/rootfs/usr/libexec/workstation-payload
+    cmd: shellcheck
+         "src/iso/upgrade/upgrade.sh"
+         "src/payload/rootfs/usr/libexec/{{.G_NAME}}-payload"
 
   lint:yamllint:
     desc: Lint the YAML files.
-    cmds:
-      - yamllint .
+    cmd: yamllint "."
 
-  rootfs:
-    desc: Build all root filesystem archives.
-    deps:
-      - for: {var: COMPONENTS}
-        task: "{{.ITEM}}:rootfs"
+  rootfs: {desc: "Build all root filesystem archives.", deps: *components}
 
-  rpm:
-    desc: Build all RPM packages.
-    deps:
-      - for: {var: COMPONENTS}
-        task: "{{.ITEM}}:rpm"
+  rpm: {desc: "Build all RPM packages.", deps: *components}
 
-  sbom:
-    desc: Build all SBOM files.
-    deps:
-      - for: {var: COMPONENTS}
-        task: "{{.ITEM}}:sbom"
-
-  srpm:
-    desc: Build all SRPM packages.
-    deps:
-      - for: {var: COMPONENTS}
-        task: "{{.ITEM}}:srpm"
+  sbom: {desc: "Build all SBOM files.", deps: *components}

@@ -10,8 +10,6 @@ MESSAGE="Installing Flatpak applications."
 
 echo "$MESSAGE"
 
-if plymouth --ping; then
-  plymouth display-message --text="$MESSAGE"
-fi
+plymouth --ping && plymouth display-message --text="$MESSAGE"
 
 exec flatpak preinstall --noninteractive
