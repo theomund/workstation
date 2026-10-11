@@ -31,11 +31,7 @@ jobs:
           runCmd: task ci
       - name: Upload Install ISO
         uses: actions/upload-artifact@v7
-        with:
-          archive: false
-          path: target/iso/install/*.iso
+        with: {archive: false, path: target/iso/install/*.iso}
       - name: Upload Upgrade ISO
         uses: actions/upload-artifact@v7
-        with:
-          archive: false
-          path: target/iso/upgrade/*.iso
+        with: {archive: false, path: target/iso/upgrade/*.iso}

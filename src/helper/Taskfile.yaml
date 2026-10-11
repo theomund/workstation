@@ -29,13 +29,9 @@ tasks:
       - "{{.CONTAINERFILE}}"
       - "{{.G_RPM}}"
       - '{{if ne .G_COMPONENT "common"}}{{.BASE_ID}}{{end}}'
-    generates:
-      - "{{.G_CONTAINER}}"
-    deps:
-      - container:base
-      - rpm
-    status:
-      - podman-remote image exists {{.G_TAG}}
+    generates: ["{{.G_CONTAINER}}"]
+    deps: [container:base, rpm]
+    status: ["podman-remote image exists {{.G_TAG}}"]
     cmds:
       - mkdir -p "{{.ROOT}}"
       - defer: rm -rf "{{.ROOT}}"
@@ -58,40 +54,27 @@ tasks:
 
   cve:
     desc: Build {{.G_COMPONENT}} CVE table.
-    env:
-      NO_COLOR: "1"
-    vars:
-      CVE: "{{.G_TARGET}}/cve/{{.G_PREFIX}}-cve.txt"
-    sources:
-      - "{{.G_SBOM}}"
-    generates:
-      - "{{.CVE}}"
-    deps:
-      - :db
-      - sbom
-    cmds:
-      - grype sbom:"{{.G_SBOM}}" -o table="{{.CVE}}"
+    env: {NO_COLOR: "1"}
+    vars: {CVE: "{{.G_TARGET}}/cve/{{.G_PREFIX}}-cve.txt"}
+    sources: ["{{.G_SBOM}}"]
+    generates: ["{{.CVE}}"]
+    deps: [":db", sbom]
+    cmd: grype sbom:"{{.G_SBOM}}" -o table="{{.CVE}}"
 
   oci:
     desc: Build {{.G_COMPONENT}} container archive.
-    sources:
-      - "{{.G_CONTAINER}}"
-    generates:
-      - "{{.G_OCI}}"
-    deps:
-      - container
+    sources: ["{{.G_CONTAINER}}"]
+    generates: ["{{.G_OCI}}"]
+    deps: [container]
     cmds:
       - mkdir -p "{{dir .G_OCI}}"
       - podman-remote save --format oci-archive -o "{{.G_OCI}}" {{.G_TAG}}
 
   rootfs:
     desc: Build {{.G_COMPONENT}} root filesystem archive.
-    vars:
-      FILES: "{{.G_SOURCE}}/rootfs"
-    sources:
-      - "{{.FILES}}/**/*"
-    generates:
-      - "{{.G_ROOTFS}}"
+    vars: {FILES: "{{.G_SOURCE}}/rootfs"}
+    sources: ["{{.FILES}}/**/*"]
+    generates: ["{{.G_ROOTFS}}"]
     cmds:
       - mkdir -p "{{dir .G_ROOTFS}}"
       - tar --exclude '.gitkeep' -czvf "{{.G_ROOTFS}}" -C "{{.FILES}}" "."
@@ -102,14 +85,9 @@ tasks:
       SPEC: "{{.G_SOURCE}}/rpm/{{.G_NAME}}-{{.G_COMPONENT}}.spec"
       SRPM: "{{.G_TARGET}}/rpm/{{.G_PREFIX}}.el10.src.rpm"
       TOP_DIR: "{{.ROOT_DIR}}/{{.G_TARGET}}/rpm/root"
-    sources:
-      - "{{.G_ROOTFS}}"
-      - "{{.SPEC}}"
-    generates:
-      - "{{.G_RPM}}"
-      - "{{.SRPM}}"
-    deps:
-      - rootfs
+    sources: ["{{.G_ROOTFS}}", "{{.SPEC}}"]
+    generates: ["{{.G_RPM}}", "{{.SRPM}}"]
+    deps: [rootfs]
     cmds:
       - defer: rm -rf "{{.TOP_DIR}}"
       - rpmbuild
@@ -123,19 +101,13 @@ tasks:
 
   sbom:
     desc: Build {{.G_COMPONENT}} SBOM file.
-    env:
-      SYFT_GOLANG_CAPTURE_SYMBOLS: all
-    sources:
-      - "{{.G_OCI}}"
-    generates:
-      - "{{.G_SBOM}}"
-    deps:
-      - oci
-    cmds:
-      - syft oci-archive:"{{.G_OCI}}" -o syft-json="{{.G_SBOM}}"
+    env: {SYFT_GOLANG_CAPTURE_SYMBOLS: all}
+    sources: ["{{.G_OCI}}"]
+    generates: ["{{.G_SBOM}}"]
+    deps: [oci]
+    cmd: syft oci-archive:"{{.G_OCI}}" -o syft-json="{{.G_SBOM}}"
 
   container:base:
     internal: true
     if: '{{ne .G_COMPONENT "common"}}'
-    deps:
-      - :common:container
+    deps: [":common:container"]

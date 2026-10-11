@@ -10,19 +10,15 @@ tasks:
     desc: Build installation ISO image.
     vars:
       CONFIG: src/iso/install/config.toml
-      STORAGE: /var/lib/containers/storage
-
-      TARGET: target/iso/install
       ISO: '{{printf .G_ISO_FORMAT "install"}}'
-      ROOT: "{{.TARGET}}/root"
+      ROOT: target/iso/install/root
+      STORAGE: /var/lib/containers/storage
     sources:
       - "{{.CONFIG}}"
       - '{{printf .G_CONTAINER_FORMAT "installer"}}'
       - '{{printf .G_CONTAINER_FORMAT "payload"}}'
-    generates:
-      - "{{.ISO}}"
-    deps:
-      - :container
+    generates: ["{{.ISO}}"]
+    deps: [":container"]
     cmds:
       - mkdir -p "{{.ROOT}}"
       - defer: rm -rf "{{.ROOT}}"
@@ -44,18 +40,12 @@ tasks:
   upgrade:
     desc: Build upgrade ISO image.
     vars:
+      ISO: '{{printf .G_ISO_FORMAT "upgrade"}}'
       PAYLOAD: '{{printf .G_OCI_FORMAT "payload"}}'
       SOURCE: src/iso/upgrade
-
-      TARGET: target/iso/upgrade
-      ISO: '{{printf .G_ISO_FORMAT "upgrade"}}'
-    sources:
-      - "{{.PAYLOAD}}"
-      - "{{.SOURCE}}/upgrade.sh"
-    generates:
-      - "{{.ISO}}"
-    deps:
-      - :payload:oci
+    sources: ["{{.PAYLOAD}}", "{{.SOURCE}}/upgrade.sh"]
+    generates: ["{{.ISO}}"]
+    deps: [":payload:oci"]
     cmds:
       - mkdir -p "{{dir .ISO}}"
       - mkisofs -R -J -o "{{.ISO}}" "{{.SOURCE}}" "{{.PAYLOAD}}"

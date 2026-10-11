@@ -11,23 +11,14 @@ ExclusiveArch: x86_64
 URL: https://github.com/theomund/workstation
 Source0: file://%{name}-%{_version}-%{_release}-rootfs.tar.gz
 Obsoletes: PackageKit-command-not-found <= 2.0.0
-Requires: bcvk
-Requires: cockpit-machines
-Requires: code
-Requires: ffmpeg
-Requires: firefox
-Requires: nvidia-driver
-Requires: nvidia-driver-cuda
-Requires: nvidia-open-kmod
-Requires: thunderbird
+Requires: bcvk, cockpit-machines, code, ffmpeg, firefox, nvidia-driver
+Requires: nvidia-driver-cuda, nvidia-open-kmod, thunderbird
 
 %description
 %{summary}
 
 %prep
-
 %build
-
 %check
 
 %install

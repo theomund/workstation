@@ -19,6 +19,4 @@ reboot --eject
 """
 
 [customizations.installer.modules]
-disable = [
-  "org.fedoraproject.Anaconda.Modules.Users"
-]
+disable = ["org.fedoraproject.Anaconda.Modules.Users"]

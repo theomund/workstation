@@ -8,26 +8,20 @@ version: "3"
 includes:
   common:
     taskfile: src/helper/Taskfile.yaml
-    vars:
-      G_COMPONENT: common
+    vars: {G_COMPONENT: common}
   installer:
     taskfile: src/helper/Taskfile.yaml
-    vars:
-      G_COMPONENT: installer
-  iso:
-    taskfile: src/iso/Taskfile.yaml
+    vars: {G_COMPONENT: installer}
+  iso: src/iso/Taskfile.yaml
   payload:
     taskfile: src/helper/Taskfile.yaml
-    vars:
-      G_COMPONENT: payload
+    vars: {G_COMPONENT: payload}
 
 dotenv: [".env"]
 
 run: when_changed
 
-env:
-  RELEASE: 1
-  VERSION: 0.3.0
+env: {RELEASE: 1, VERSION: 0.3.0}
 
 vars:
   G_COMPONENTS: [common, installer, payload]
@@ -44,84 +38,62 @@ vars:
 tasks:
   ci:
     desc: Run CI/CD pipeline.
-    cmds:
-      - task: lint
-      - task: iso
+    cmds: [{task: lint}, {task: iso}]
 
   clean:
     desc: Clean the project.
-    cmds:
-      - git clean -fdxe '.env'
+    cmd: git clean -fdxe '.env'
 
   container:
     desc: Build all container images.
-    deps:
+    deps: &components
       - for: {var: G_COMPONENTS}
-        task: "{{.ITEM}}:container"
+        task: "{{.ITEM}}:{{.TASK}}"
 
   cve:
     desc: Build all CVE tables.
-    deps:
-      - for: {var: G_COMPONENTS}
-        task: "{{.ITEM}}:cve"
+    deps: *components
 
   db:
     desc: Update CVE database.
-    cmds:
-      - grype db update
+    cmd: grype db update
 
   default:
     desc: Print project tasks.
     silent: true
-    cmds:
-      - task -l
+    cmd: task -l
 
   iso:
     desc: Build all ISO images.
-    deps:
-      - iso:install
-      - iso:upgrade
+    deps: [iso:install, iso:upgrade]
 
   lint:
     desc: Lint the source code.
-    deps:
-      - lint:rpmlint
-      - lint:shellcheck
-      - lint:yamllint
+    deps: [lint:rpmlint, lint:shellcheck, lint:yamllint]
 
   lint:rpmlint:
     desc: Lint the RPM packages.
-    deps:
-      - rpm
-    cmds:
-      - rpmlint "target/"*"/rpm/"*".src.rpm"
+    deps: [rpm]
+    cmd: rpmlint "target/"*"/rpm/"*".src.rpm"
 
   lint:shellcheck:
     desc: Lint the shell scripts.
-    cmds:
-      - shellcheck
-        "src/iso/upgrade/upgrade.sh"
-        "src/payload/rootfs/usr/libexec/{{.G_NAME}}-payload"
+    cmd: shellcheck
+         "src/iso/upgrade/upgrade.sh"
+         "src/payload/rootfs/usr/libexec/{{.G_NAME}}-payload"
 
   lint:yamllint:
     desc: Lint the YAML files.
-    cmds:
-      - yamllint "."
+    cmd: yamllint "."
 
   rootfs:
     desc: Build all root filesystem archives.
-    deps:
-      - for: {var: G_COMPONENTS}
-        task: "{{.ITEM}}:rootfs"
+    deps: *components
 
   rpm:
     desc: Build all RPM packages.
-    deps:
-      - for: {var: G_COMPONENTS}
-        task: "{{.ITEM}}:rpm"
+    deps: *components
 
   sbom:
     desc: Build all SBOM files.
-    deps:
-      - for: {var: G_COMPONENTS}
-        task: "{{.ITEM}}:sbom"
+    deps: *components

@@ -10,25 +10,15 @@ License: MPL-2.0
 ExclusiveArch: x86_64
 URL: https://github.com/theomund/workstation
 Source0: file://%{name}-%{_version}-%{_release}-rootfs.tar.gz
-Requires: anaconda
-Requires: anaconda-dracut
-Requires: anaconda-install-env-deps
-Requires: biosdevname
-Requires: dracut-config-generic
-Requires: grub2-efi-x64-cdboot
-Requires: lorax-templates-almalinux
-Requires: net-tools
-Requires: prefixdevname
-Requires: python3-mako
-Requires: squashfs-tools
+Requires: anaconda, anaconda-dracut, anaconda-install-env-deps, biosdevname
+Requires: dracut-config-generic, grub2-efi-x64-cdboot, lorax-templates-almalinux
+Requires: net-tools, prefixdevname, python3-mako, squashfs-tools
 
 %description
 %{summary}
 
 %prep
-
 %build
-
 %check
 
 %install
