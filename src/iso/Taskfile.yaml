@@ -9,12 +9,10 @@ tasks:
   install:
     desc: Build installation ISO image.
     vars:
-      CONFIG: src/iso/install/config.toml
       ISO: '{{printf .G_ISO_FORMAT "install"}}'
       ROOT: target/iso/install/root
       STORAGE: /var/lib/containers/storage
     sources:
-      - "{{.CONFIG}}"
       - '{{printf .G_CONTAINER_FORMAT "installer"}}'
       - '{{printf .G_CONTAINER_FORMAT "payload"}}'
     generates: ["{{.ISO}}"]
@@ -26,15 +24,13 @@ tasks:
         --privileged
         --rm
         -v "{{.STORAGE}}:{{.STORAGE}}"
-        -v "$WORKSPACE_PATH/{{.CONFIG}}:/config.toml"
         -v "$WORKSPACE_PATH/{{.ROOT}}:/output"
         ghcr.io/osbuild/image-builder:v86.0.0
         build
-        --blueprint "/config.toml"
         --bootc-installer-payload-ref {{printf .G_TAG_FORMAT "payload"}}
         --bootc-ref {{printf .G_TAG_FORMAT "installer"}}
         --output-dir "/output"
-        bootc-installer
+        bootc-generic-iso
       - mv "{{.ROOT}}"/*.iso "{{.ISO}}"
 
   upgrade:

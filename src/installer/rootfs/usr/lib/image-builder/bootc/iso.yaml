@@ -1,0 +1,15 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+---
+label: Workstation-Installer
+grub2:
+  entries:
+    - name: Install Workstation
+      linux: >-
+        /images/pxeboot/vmlinuz
+        inst.ks=file:/usr/share/anaconda/workstation-installer.ks
+        inst.stage2=hd:LABEL=Workstation-Installer
+        inst.graphical console=tty0 selinux=0 rhgb quiet
+      initrd: /images/pxeboot/initrd.img
