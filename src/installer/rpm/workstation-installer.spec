@@ -36,7 +36,7 @@ rm -v /usr/lib/systemd/system-generators/systemd-gpt-auto-generator
 kernel=$(kernel-install list --json pretty | jq -r '.[] | select(.has_kernel == true) | .version')
 DRACUT_NO_XATTR=1 dracut --force -v --zstd --reproducible --no-hostonly \
   --add "anaconda" \
-  --include /usr/share/anaconda/%{name}.ks \
+  --include /usr/share/anaconda/%{name}.ks /usr/share/anaconda/%{name}.ks \
   "/usr/lib/modules/${kernel}/initramfs.img" "${kernel}"
 
 %files
