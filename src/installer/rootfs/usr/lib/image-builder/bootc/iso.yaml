@@ -8,8 +8,6 @@ grub2:
   entries:
     - name: Install Workstation
       linux: >-
-        /images/pxeboot/vmlinuz
-        inst.ks=file:/usr/share/anaconda/workstation-installer.ks
-        inst.stage2=hd:LABEL=Workstation-Installer
-        inst.graphical console=tty0 selinux=0 rhgb quiet
+        /images/pxeboot/vmlinuz inst.stage2=hd:LABEL=Workstation-Installer
+        inst.text console=tty0 selinux=0
       initrd: /images/pxeboot/initrd.img
