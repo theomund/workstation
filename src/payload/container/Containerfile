@@ -10,13 +10,12 @@ RUN --mount=type=bind,source=target/payload/rpm,target=/tmp/RPMS,z \
     --mount=type=tmpfs,target=/run \
     --mount=type=tmpfs,target=/var/cache \
     --mount=type=tmpfs,target=/var/lib \
-    --mount=type=tmpfs,target=/var/log <<'EOF'
+    --mount=type=tmpfs,target=/var/log \
 dnf install -y \
   @multimedia \
   @sound-and-video \
   @workstation-product-environment \
   /tmp/RPMS/*.rpm
-EOF
 RUN bootc container lint --fatal-warnings
 
 FROM quay.io/coreos/chunkah:v0.7.0

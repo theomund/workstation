@@ -6,16 +6,10 @@
 version: "3"
 
 includes:
-  common:
-    taskfile: src/helper/Taskfile.yaml
-    vars: {G_COMPONENT: common}
-  installer:
-    taskfile: src/helper/Taskfile.yaml
-    vars: {G_COMPONENT: installer}
-  iso: src/iso/Taskfile.yaml
-  payload:
-    taskfile: src/helper/Taskfile.yaml
-    vars: {G_COMPONENT: payload}
+  common: "{{.G_HELPER}}"
+  installer: "{{.G_HELPER}}"
+  iso: src/iso
+  payload: "{{.G_HELPER}}"
 
 dotenv: [".env"]
 
@@ -25,6 +19,7 @@ env: {RELEASE: 1, VERSION: 0.3.0}
 
 vars:
   G_COMPONENTS: [common, installer, payload]
+  G_HELPER: src/helper
   G_NAME: workstation
   G_REGISTRY: ghcr.io/theomund/{{.G_NAME}}
   G_SUFFIX: "{{.VERSION}}-{{.RELEASE}}"
@@ -50,9 +45,7 @@ tasks:
       - for: {var: G_COMPONENTS}
         task: "{{.ITEM}}:{{.TASK}}"
 
-  cve:
-    desc: Build all CVE tables.
-    deps: *components
+  cve: {desc: "Build all CVE tables.", deps: *components}
 
   db:
     desc: Update CVE database.
@@ -86,14 +79,8 @@ tasks:
     desc: Lint the YAML files.
     cmd: yamllint "."
 
-  rootfs:
-    desc: Build all root filesystem archives.
-    deps: *components
+  rootfs: {desc: "Build all root filesystem archives.", deps: *components}
 
-  rpm:
-    desc: Build all RPM packages.
-    deps: *components
+  rpm: {desc: "Build all RPM packages.", deps: *components}
 
-  sbom:
-    desc: Build all SBOM files.
-    deps: *components
+  sbom: {desc: "Build all SBOM files.", deps: *components}

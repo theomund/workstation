@@ -6,13 +6,14 @@
 version: "3"
 
 vars:
+  G_COMPONENT: '{{index (splitList ":" .TASK) 0}}'
+  G_CONTAINER: "{{printf .G_CONTAINER_FORMAT .G_COMPONENT}}"
+  G_OCI: "{{printf .G_OCI_FORMAT .G_COMPONENT}}"
   G_PREFIX: "{{.G_NAME}}-{{.G_COMPONENT}}-{{.G_SUFFIX}}"
   G_SOURCE: src/{{.G_COMPONENT}}
   G_TAG: "{{printf .G_TAG_FORMAT .G_COMPONENT}}"
 
   G_TARGET: target/{{.G_COMPONENT}}
-  G_CONTAINER: "{{printf .G_CONTAINER_FORMAT .G_COMPONENT}}"
-  G_OCI: "{{printf .G_OCI_FORMAT .G_COMPONENT}}"
   G_ROOTFS: "{{.G_TARGET}}/rootfs/{{.G_PREFIX}}-rootfs.tar.gz"
   G_RPM: "{{.G_TARGET}}/rpm/{{.G_PREFIX}}.el10.x86_64.rpm"
   G_SBOM: "{{.G_TARGET}}/sbom/{{.G_PREFIX}}-sbom.json"

@@ -25,7 +25,7 @@ Requires: nvidia-driver-cuda, nvidia-open-kmod, thunderbird
 tar xzvf %{SOURCE0} -C %{buildroot}
 
 %post
-%systemd_post workstation-payload.service
+%systemd_post %{name}.service
 sed -i 's/^#mount_program =.*/mount_program = ""/; s/^mountopt =/#&/' /usr/share/containers/storage.conf
 
 %posttrans
