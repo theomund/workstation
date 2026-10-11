@@ -95,7 +95,7 @@ tasks:
         --define "_rpmdir {{.ROOT_DIR}}/{{dir .G_RPM}}"
         --define "_rpmfilename %{NAME}-%{VERSION}-%{RELEASE}.%{ARCH}.rpm"
         --define "_sourcedir {{.ROOT_DIR}}/{{dir .G_ROOTFS}}"
-        --define "_srcrpmdir {{.ROOT_DIR}}/{{dir .SRPM}}"
+        --define "_srcrpmdir %{_rpmdir}"
         --define "_topdir {{.TOP_DIR}}"
         -ba
         "{{.SPEC}}"

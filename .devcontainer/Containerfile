@@ -17,6 +17,7 @@ dnf install -y \
   rpmdevtools-9.6 \
   rpmlint-2.8.0 \
   ShellCheck-0.10.0 \
+  tree-2.1.0 \
   xorriso-1.5.6 \
   yamllint-1.37.1
 

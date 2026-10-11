@@ -6,10 +6,10 @@
 version: "3"
 
 includes:
-  common: "{{.G_HELPER}}"
-  installer: "{{.G_HELPER}}"
+  common: &helper src/helper
+  installer: *helper
   iso: src/iso
-  payload: "{{.G_HELPER}}"
+  payload: *helper
 
 dotenv: [".env"]
 
@@ -19,7 +19,6 @@ env: {RELEASE: 1, VERSION: 0.3.0}
 
 vars:
   G_COMPONENTS: [common, installer, payload]
-  G_HELPER: src/helper
   G_NAME: workstation
   G_REGISTRY: ghcr.io/theomund/{{.G_NAME}}
   G_SUFFIX: "{{.VERSION}}-{{.RELEASE}}"

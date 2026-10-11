@@ -12,7 +12,7 @@ URL: https://github.com/theomund/workstation
 Source0: file://%{name}-%{_version}-%{_release}-rootfs.tar.gz
 Requires: anaconda, anaconda-install-img-deps, anaconda-dracut
 Requires: dracut-config-generic, dracut-network, net-tools, grub2-efi-x64-cdboot
-Requires: xorriso, squashfs-tools
+Requires: fuse-overlayfs, xorriso, squashfs-tools
 
 %description
 %{summary}
@@ -36,7 +36,7 @@ rm -v /usr/lib/systemd/system-generators/systemd-gpt-auto-generator
 kernel=$(kernel-install list --json pretty | jq -r '.[] | select(.has_kernel == true) | .version')
 DRACUT_NO_XATTR=1 dracut --force -v --zstd --reproducible --no-hostonly \
   --add "anaconda" \
-  --include /usr/share/anaconda/%{name}.ks /usr/share/anaconda/%{name}.ks \
+  --install /usr/share/anaconda/%{name}.ks \
   "/usr/lib/modules/${kernel}/initramfs.img" "${kernel}"
 
 %files
