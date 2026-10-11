@@ -11,7 +11,7 @@ grub2:
         /images/pxeboot/vmlinuz
         console=tty0
         inst.ks=file:/usr/share/anaconda/workstation-installer.ks
-        inst.selinux=0
         inst.stage2=hd:LABEL=Workstation-Installer
         inst.text
+        selinux=0
       initrd: /images/pxeboot/initrd.img
