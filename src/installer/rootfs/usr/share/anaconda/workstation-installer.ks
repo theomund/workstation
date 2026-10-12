@@ -4,6 +4,17 @@
 
 text --non-interactive
 zerombr
+
+%pre --erroronfail
+: > /tmp/preferred-disk.ks
+
+if [ -b /dev/nvme0n1 ]; then
+  echo "ignoredisk --only-use=nvme0n1" > /tmp/preferred-disk.ks
+fi
+%end
+
+%include /tmp/preferred-disk.ks
+
 clearpart --all --initlabel --disklabel=gpt
 reqpart --add-boot
 part pv.01 --fstype="lvmpv" --size=1 --grow
