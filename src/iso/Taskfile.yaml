@@ -25,7 +25,7 @@ tasks:
         --rm
         -v "{{.STORAGE}}:{{.STORAGE}}"
         -v "$WORKSPACE_PATH/{{.ROOT}}:/output"
-        ghcr.io/osbuild/image-builder:v86.0.0
+        ghcr.io/osbuild/image-builder@sha256:894c6eabff8a18d5cd20ac6da869bf013c0a11bca49087205527921ac035ed2f
         build
         --bootc-installer-payload-ref {{printf .G_TAG_FORMAT "payload"}}
         --bootc-ref {{printf .G_TAG_FORMAT "installer"}}
