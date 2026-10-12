@@ -71,12 +71,19 @@ tasks:
 
   rootfs:
     desc: Build {{.G_COMPONENT}} root filesystem archive.
-    vars: {FILES: "{{.G_SOURCE}}/rootfs"}
+    vars:
+      FILES: "{{.G_SOURCE}}/rootfs"
+      ROOT: "{{.G_TARGET}}/rootfs/root"
     sources: ["{{.FILES}}/**/*"]
     generates: ["{{.G_ROOTFS}}"]
     cmds:
-      - mkdir -p "{{dir .G_ROOTFS}}"
-      - tar --exclude '.gitkeep' -czvf "{{.G_ROOTFS}}" -C "{{.FILES}}" "."
+      - mkdir -p "{{.ROOT}}"
+      - defer: rm -rf "{{.ROOT}}"
+      - cp -a "{{.FILES}}/." "{{.ROOT}}/"
+      - cmd: sed -i "s/@TAG@/{{.G_SUFFIX}}/g"
+             "{{.ROOT}}/usr/share/anaconda/{{.G_NAME}}-installer.ks"
+        if: '{{eq .G_COMPONENT "installer"}}'
+      - tar --exclude '.gitkeep' -czvf "{{.G_ROOTFS}}" -C "{{.ROOT}}" "."
 
   rpm:
     desc: Build {{.G_COMPONENT}} SRPM/RPM package.
