@@ -18,7 +18,7 @@ dnf install -y \
   /tmp/RPMS/*.rpm
 RUN bootc container lint --fatal-warnings
 
-FROM quay.io/coreos/chunkah:v0.7.0
+FROM quay.io/coreos/chunkah@sha256:8b56578258d1d10d3e1c7b0f71a4d05317c5fde331c4f483576a1b60e65f0cea
 ARG CHUNKAH_CHOWN
 ARG CHUNKAH_CONFIG_STR
 RUN --mount=from=rootfs,target=/chunkah,ro \
