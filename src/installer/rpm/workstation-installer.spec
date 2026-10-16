@@ -9,48 +9,47 @@ Summary: Installer component of workstation image
 License: MPL-2.0
 ExclusiveArch: x86_64
 URL: https://github.com/theomund/workstation
-Source0: file://%{name}-%{_version}-%{_release}-rootfs.tar.gz
-Requires: anaconda, anaconda-install-img-deps, anaconda-dracut
-Requires: dracut-config-generic, dracut-network, net-tools, grub2-efi-x64-cdboot
-Requires: fuse-overlayfs, xorriso, squashfs-tools
+Source0: file://%{name}-%{version}-%{_release}-rootfs.tar.gz
+Requires: anaconda-dracut
+Requires: anaconda-install-img-deps
+Requires: anaconda-tui
+Requires: dracut-config-generic
+Requires: fuse-overlayfs
+Requires: grub2-efi-x64-cdboot
+Requires: net-tools
+Requires: squashfs-tools
+Requires: xorriso
 
 %description
 %{summary}
 
 %prep
+%autosetup -c
+sed -i "s/@TAG@/%{version}-%{_release}/g" .%{_datadir}/anaconda/%{name}.ks
+
 %build
-%check
 
 %install
-tar xzvf %{SOURCE0} -C %{buildroot}
+cp -a . %{buildroot}
+
+%check
 
 %post
-cp -ra /usr/lib/efi/*/*/EFI /boot/efi/
-
-echo "install:x:0:0:root:/root:/usr/libexec/anaconda/run-anaconda" >> /etc/passwd
-echo "install::14438:0:99999:7:::" >> /etc/shadow
-passwd -d root
-
-rm -v /usr/lib/systemd/system-generators/systemd-gpt-auto-generator
-
-kernel=$(kernel-install list --json pretty | jq -r '.[] | select(.has_kernel == true) | .version')
-DRACUT_NO_XATTR=1 dracut --force -v --zstd --reproducible --no-hostonly \
-  --add "anaconda" \
-  --install /usr/share/anaconda/%{name}.ks \
-  "/usr/lib/modules/${kernel}/initramfs.img" "${kernel}"
+cp -ra /usr/lib/bootupd/updates/EFI /boot/efi/
+kver=$(basename /usr/lib/modules/*)
+DRACUT_NO_XATTR=1 dracut -f -v "/usr/lib/modules/${kver}/initramfs.img" "${kver}"
 
 %files
 %{_bindir}/list-harddrives
 %{_datadir}/anaconda/%{name}.ks
-%{_localstatedir}/mnt
-%{_localstatedir}/roothome
+%{_prefix}/lib/dracut/dracut.conf.d/%{name}.conf
 %{_prefix}/lib/image-builder/bootc/iso.yaml
 %{_prefix}/lib/systemd/logind.conf.d/%{name}.conf
 %{_sysconfdir}/anaconda.repos.d
 %{_sysconfdir}/anaconda/conf.d/90-%{name}.conf
+%{_sysconfdir}/systemd/system-generators/systemd-gpt-auto-generator
 %{_sysconfdir}/systemd/system/autovt@.service
 %{_sysconfdir}/systemd/system/default.target
-%{_tmpfilesdir}/%{name}.conf
 
 %changelog
 * Sun Sep 27 2026 Theomund <34360334+theomund@users.noreply.github.com> - 0.1.0-1
