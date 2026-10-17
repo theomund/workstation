@@ -1,0 +1,34 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+ARG BASE
+
+FROM ${BASE}
+ARG TAG
+COPY rootfs /
+RUN --mount=type=tmpfs,target=/var/cache \
+    --mount=type=tmpfs,target=/var/lib \
+    --mount=type=tmpfs,target=/var/log \
+    --mount=type=tmpfs,target=/run \
+    <<'EOF'
+set -eux
+
+dnf install -y \
+  anaconda-dracut-40.22.3.46 \
+  anaconda-install-img-deps-40.22.3.46 \
+  fuse-overlayfs-1.16 \
+  grub2-efi-x64-cdboot-2.12 \
+  squashfs-tools-4.6.1 \
+  xorriso-1.5.6
+
+dnf clean all
+
+cp -a /usr/lib/bootupd/updates/EFI /boot/efi/
+
+kver=$(basename /usr/lib/modules/*)
+sed -i "s|@TAG@|${TAG}|g" /usr/share/anaconda/workstation-installer.ks
+dracut -f -v -a anaconda -I /usr/share/anaconda/workstation-installer.ks "/usr/lib/modules/${kver}/initramfs.img" "${kver}"
+EOF
+
+RUN bootc container lint --fatal-warnings --skip nonempty-boot

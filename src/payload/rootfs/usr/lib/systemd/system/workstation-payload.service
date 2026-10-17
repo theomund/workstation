@@ -6,7 +6,7 @@
 Description=Payload component of workstation image
 Wants=network-online.target
 After=network-online.target plymouth-start.service
-Before=display-manager.service plymouth-quit.service plymouth-quit-wait.service
+Before=systemd-user-sessions.service
 
 [Service]
 Type=oneshot
