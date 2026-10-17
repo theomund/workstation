@@ -8,50 +8,34 @@ run-name: Linux Build
 "on":
   push: {branches: [main]}
   pull_request: {branches: [main]}
-permissions: {contents: read}
+permissions: {contents: read, packages: write}
 jobs:
   build:
     runs-on: ubuntu-26.04
     steps:
-      - &checkout
-        name: Checkout Repository
+      - name: Checkout Repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with: {persist-credentials: false}
-      - name: Configure Host System
-        run: |
-          sudo apparmor_parser -R /etc/apparmor.d/bwrap-userns-restrict
-          printf 'N' | sudo tee /sys/module/overlay/parameters/redirect_dir
-      - name: Run Development Container
-        uses: &devcontainer
-          devcontainers/ci@513af61f4de4f75d37e4438f184ba4358f0fc1ca
-        with:
-          imageName: &image ghcr.io/theomund/workstation/devcontainer
-          cacheFrom: *image
-          push: never
-          runCmd: task ci
-      - name: Upload Install ISO
-        uses: &upload
-          actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
-        with: {archive: false, path: target/iso/install/*.iso}
-      - name: Upload Upgrade ISO
-        uses: *upload
-        with: {archive: false, path: target/iso/upgrade/*.iso}
-  publish:
-    needs: build
-    if: github.event_name == 'push'
-    runs-on: ubuntu-26.04
-    permissions: {contents: read, packages: write}
-    steps:
-      - *checkout
       - name: Login to Container Registry
+        if: github.event_name == 'push'
         uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Publish Development Container
-        uses: *devcontainer
+      - name: Configure Host System
+        run: |
+          sudo apparmor_parser -R /etc/apparmor.d/bwrap-userns-restrict
+          printf 'N' | sudo tee /sys/module/overlay/parameters/redirect_dir
+      - name: Run Development Container
+        uses: devcontainers/ci@513af61f4de4f75d37e4438f184ba4358f0fc1ca
         with:
-          imageName: *image
-          cacheFrom: *image
-          push: always
+          imageName: ghcr.io/theomund/workstation/devcontainer
+          runCmd: task ci
+      - name: Upload Install ISO
+        uses: &upload
+          actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with: {archive: false, path: target/iso/*-install.iso}
+      - name: Upload Upgrade ISO
+        uses: *upload
+        with: {archive: false, path: target/iso/*-upgrade.iso}

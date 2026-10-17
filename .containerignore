@@ -3,4 +3,4 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 **
-!target/**/rpm/*.x86_64.rpm
+!target/**/*.x86_64.rpm

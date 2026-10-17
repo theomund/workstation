@@ -14,4 +14,6 @@ grub2:
         inst.stage2=hd:LABEL=Workstation-Installer
         inst.text
         selinux=0
+        systemd.gpt_auto=0
+        systemd.unit=anaconda.target
       initrd: /images/pxeboot/initrd.img
