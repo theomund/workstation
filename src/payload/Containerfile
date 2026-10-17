@@ -1,0 +1,30 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+FROM quay.io/almalinuxorg/almalinux-bootc@sha256:e99bb7fbd7155e1ce45bd99077f3ae0dbe9a13ce9abf0951765f9b0e4470a2b4
+COPY rootfs /
+RUN <<'EOF'
+set -eux
+
+dnf install -y \
+  almalinux-release-nvidia-driver-10 \
+  https://download1.rpmfusion.org/free/el/rpmfusion-free-release-10.noarch.rpm
+
+dnf install -y --exclude=PackageKit-command-not-found \
+  @workstation-product-environment \
+  bcvk-0.10.0 \
+  cockpit-machines-348 \
+  code-1.142.0 \
+  ffmpeg-7.1.5 \
+  nvidia-driver-615.71.09 \
+  nvidia-driver-cuda-615.71.09 \
+  thunderbird-140.17.0 \
+  tmux-3.3a
+
+systemctl preset-all
+
+find /var/cache /var/lib /var/log /run -mindepth 1 ! -path '/run/secrets' ! -path '/run/.containerenv' -delete
+
+bootc container lint --fatal-warnings
+EOF

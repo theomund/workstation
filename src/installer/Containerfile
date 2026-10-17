@@ -1,0 +1,27 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+FROM quay.io/almalinuxorg/almalinux-bootc@sha256:e99bb7fbd7155e1ce45bd99077f3ae0dbe9a13ce9abf0951765f9b0e4470a2b4
+ARG TAG
+COPY rootfs /
+RUN <<'EOF'
+set -eux
+
+sed -i "s|@TAG@|${TAG}|g" /usr/share/anaconda/workstation-installer.ks
+
+dnf install -y \
+  anaconda-dracut-40.22.3.46 \
+  anaconda-install-img-deps-40.22.3.46 \
+  grub2-efi-x64-cdboot-2.12 \
+  squashfs-tools-4.6.1 \
+  xorriso-1.5.6
+
+cp -a /usr/lib/bootupd/updates/EFI /boot/efi/
+kver=$(basename /usr/lib/modules/*)
+dracut -f -v -a anaconda -I /usr/share/anaconda/workstation-installer.ks "/usr/lib/modules/${kver}/initramfs.img" "${kver}"
+
+find /var/cache /var/lib /var/log /run -mindepth 1 ! -path '/run/secrets' ! -path '/run/.containerenv' -delete
+
+bootc container lint --fatal-warnings --skip nonempty-boot
+EOF

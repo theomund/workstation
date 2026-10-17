@@ -3,32 +3,26 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 FROM quay.io/almalinuxorg/almalinux@sha256:112a396798d93f15b66f19786d553ed3f37d4503db71a92a871748bc731c797c
-RUN --mount=type=tmpfs,target=/var/cache <<'EOF'
+RUN <<'EOF'
+set -eux
+
 dnf install -y epel-release-10
 
 dnf install -y \
   bash-completion-2.11 \
   git-2.52.0 \
-  gnupg2-2.4.5 \
   https://github.com/anchore/grype/releases/download/v0.120.1/grype_0.120.1_linux_amd64.rpm \
   https://github.com/anchore/syft/releases/download/v1.54.1/syft_1.54.1_linux_amd64.rpm \
   https://github.com/go-task/task/releases/download/v3.54.0/task_3.54.0_linux_amd64.rpm \
   podman-remote-5.8.2 \
-  rpmdevtools-9.6 \
-  rpmlint-2.8.0 \
   ShellCheck-0.10.0 \
   tree-2.1.0 \
   xorriso-1.5.6 \
   yamllint-1.37.1
 
-useradd -m -G wheel developer
+useradd -m developer
+
+find /var/cache /var/log -mindepth 1 -delete
 EOF
 ENV CONTAINER_HOST=unix:///run/podman/podman.sock
-COPY --chown=developer:developer <<'EOF' /home/developer/.rpmmacros
-%_release %{getenv:RELEASE}
-%_rpmfilename %%{NAME}-%%{VERSION}-%%{RELEASE}.%%{ARCH}.rpm
-%_srcrpmdir %{_rpmdir}
-%_version %{getenv:VERSION}
-%debug_package %{nil}
-EOF
 USER developer
