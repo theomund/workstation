@@ -7,41 +7,39 @@ version: "3"
 
 vars:
   G_COMPONENT: '{{splitList ":" .TASK | first}}'
-  G_CONTAINER: "{{printf .G_CONTAINER_FORMAT .G_COMPONENT}}"
-  G_OCI: "{{printf .G_OCI_FORMAT .G_COMPONENT}}"
-  G_PREFIX: "{{.G_NAME}}-{{.G_COMPONENT}}-{{.G_SUFFIX}}"
   G_SOURCE: src/{{.G_COMPONENT}}
   G_TAG: "{{printf .G_TAG_FORMAT .G_COMPONENT}}"
 
-  G_TARGET: target/{{.G_COMPONENT}}
-  G_ROOTFS: "{{.G_TARGET}}/rootfs/{{.G_PREFIX}}-rootfs.tar.gz"
-  G_RPM: "{{.G_TARGET}}/rpm/{{.G_PREFIX}}.el10.x86_64.rpm"
-  G_SBOM: "{{.G_TARGET}}/sbom/{{.G_PREFIX}}-sbom.json"
+  G_CONTAINER: '{{printf .G_PATH_FORMAT .G_COMPONENT "container" "-iid.txt"}}'
+  G_OCI: '{{printf .G_PATH_FORMAT .G_COMPONENT "oci" "-oci.tar"}}'
+  G_ROOTFS: '{{printf .G_PATH_FORMAT .G_COMPONENT "rootfs" "-rootfs.tar.gz"}}'
+  G_RPM: '{{printf .G_PATH_FORMAT .G_COMPONENT "rpm" ".el10.x86_64.rpm"}}'
+  G_SBOM: '{{printf .G_PATH_FORMAT .G_COMPONENT "sbom" "-sbom.json"}}'
 
 tasks:
   container:
     desc: Build {{.G_COMPONENT}} container.
     vars:
-      BASE_ID: '{{printf .G_CONTAINER_FORMAT "common"}}'
-      BASE_TAG: '{{printf .G_TAG_FORMAT "common"}}'
+      BASE: >-
+        quay.io/almalinuxorg/almalinux-bootc@sha256:7a80a51c0890f5ed736a8517e13adfa7dc6d882ac9838b6d8d60cd5207fbb69f
       CONTAINERFILE: "{{.G_SOURCE}}/container/Containerfile"
-      ROOT: "{{.G_TARGET}}/container/root"
+      ROOT: "{{dir .G_CONTAINER}}/root"
     sources:
       - "{{.CONTAINERFILE}}"
       - "{{.G_RPM}}"
-      - '{{if ne .G_COMPONENT "common"}}{{.BASE_ID}}{{end}}'
     generates: ["{{.G_CONTAINER}}"]
-    deps: [container:base, rpm]
+    deps: [rpm]
     status: ["podman-remote image exists {{.G_TAG}}"]
     cmds:
       - mkdir -p "{{.ROOT}}"
       - defer: rm -rf "{{.ROOT}}"
+      - podman-remote pull "{{.BASE}}"
       - podman-remote build
         --iidfile "{{.G_CONTAINER}}"
-        {{if ne .G_COMPONENT "common"}}--build-arg BASE={{.BASE_TAG}}{{end}}
+        --build-arg BASE={{.BASE}}
         {{if eq .G_COMPONENT "payload"}}
         --build-arg CHUNKAH_CHOWN="$(id -u):$(id -g)"
-        --build-arg CHUNKAH_CONFIG_STR="$(podman-remote inspect {{.BASE_TAG}})"
+        --build-arg CHUNKAH_CONFIG_STR="$(podman-remote inspect {{.BASE}})"
         --build-arg CHUNKAH_OUTPUT="$WORKSPACE_PATH/{{.ROOT}}/out"
         --security-opt label=disable
         --skip-unused-stages=false
@@ -54,7 +52,7 @@ tasks:
   cve:
     desc: Build {{.G_COMPONENT}} CVE table.
     env: {NO_COLOR: "1"}
-    vars: {CVE: "{{.G_TARGET}}/cve/{{.G_PREFIX}}-cve.txt"}
+    vars: {CVE: '{{printf .G_PATH_FORMAT .G_COMPONENT "cve" "-cve.txt"}}'}
     sources: ["{{.G_SBOM}}"]
     generates: ["{{.CVE}}"]
     deps: [":db", sbom]
@@ -71,26 +69,19 @@ tasks:
 
   rootfs:
     desc: Build {{.G_COMPONENT}} root filesystem archive.
-    vars:
-      FILES: "{{.G_SOURCE}}/rootfs"
-      ROOT: "{{.G_TARGET}}/rootfs/root"
+    vars: {FILES: "{{.G_SOURCE}}/rootfs"}
     sources: ["{{.FILES}}/**/*"]
     generates: ["{{.G_ROOTFS}}"]
     cmds:
-      - mkdir -p "{{.ROOT}}"
-      - defer: rm -rf "{{.ROOT}}"
-      - cp -a "{{.FILES}}/." "{{.ROOT}}/"
-      - cmd: sed -i "s/@TAG@/{{.G_SUFFIX}}/g"
-             "{{.ROOT}}/usr/share/anaconda/{{.G_NAME}}-installer.ks"
-        if: '{{eq .G_COMPONENT "installer"}}'
-      - tar --exclude '.gitkeep' -czvf "{{.G_ROOTFS}}" -C "{{.ROOT}}" "."
+      - mkdir -p "{{dir .G_ROOTFS}}"
+      - tar -czvf "{{.G_ROOTFS}}" -C "{{.FILES}}" "."
 
   rpm:
     desc: Build {{.G_COMPONENT}} SRPM/RPM package.
     vars:
       SPEC: "{{.G_SOURCE}}/rpm/{{.G_NAME}}-{{.G_COMPONENT}}.spec"
-      SRPM: "{{.G_TARGET}}/rpm/{{.G_PREFIX}}.el10.src.rpm"
-      TOP_DIR: "{{.ROOT_DIR}}/{{.G_TARGET}}/rpm/root"
+      SRPM: '{{printf .G_PATH_FORMAT .G_COMPONENT "rpm" ".el10.src.rpm"}}'
+      TOP_DIR: "{{.ROOT_DIR}}/{{dir .G_RPM}}/root"
     sources: ["{{.G_ROOTFS}}", "{{.SPEC}}"]
     generates: ["{{.G_RPM}}", "{{.SRPM}}"]
     deps: [rootfs]
@@ -109,8 +100,3 @@ tasks:
     generates: ["{{.G_SBOM}}"]
     deps: [oci]
     cmd: syft oci-archive:"{{.G_OCI}}" -o syft-json="{{.G_SBOM}}"
-
-  container:base:
-    internal: true
-    if: '{{ne .G_COMPONENT "common"}}'
-    deps: [":common:container"]

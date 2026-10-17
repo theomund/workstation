@@ -10,7 +10,8 @@ Before=display-manager.service plymouth-quit.service plymouth-quit-wait.service
 
 [Service]
 Type=oneshot
-ExecStart=/usr/libexec/workstation-payload
+ExecStartPre=-/usr/bin/plymouth display-message --text="Installing Flatpak applications."
+ExecStart=/usr/bin/flatpak preinstall --noninteractive
 
 [Install]
 WantedBy=graphical.target
