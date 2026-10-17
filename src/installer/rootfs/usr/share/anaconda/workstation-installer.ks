@@ -16,13 +16,8 @@ fi
 %include /tmp/preferred-disk.ks
 
 clearpart --all --initlabel --disklabel=gpt
-reqpart --add-boot
-part pv.01 --fstype="lvmpv" --size=1 --grow
-volgroup vg0 pv.01
-logvol swap --fstype="swap" --vgname=vg0 --name=swap --size=4096
-logvol / --fstype="xfs" --vgname=vg0 --name=root --size=10240 --grow
+autopart --nohome --type=lvm
 network --device=link --activate
-xconfig --startxonboot
 ostreecontainer --transport=containers-storage --url=ghcr.io/theomund/workstation/payload:@TAG@ --no-signature-verification
 
 %post --erroronfail

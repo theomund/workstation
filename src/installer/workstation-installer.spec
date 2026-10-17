@@ -47,9 +47,7 @@ DRACUT_NO_XATTR=1 dracut -f -v "/usr/lib/modules/${kver}/initramfs.img" "${kver}
 %{_prefix}/lib/systemd/logind.conf.d/%{name}.conf
 %{_sysconfdir}/anaconda.repos.d
 %{_sysconfdir}/anaconda/conf.d/90-%{name}.conf
-%{_sysconfdir}/systemd/system-generators/systemd-gpt-auto-generator
-%{_sysconfdir}/systemd/system/autovt@.service
-%{_sysconfdir}/systemd/system/default.target
+%{_unitdir}/autovt@.service
 
 %changelog
 * Sun Sep 27 2026 Theomund <34360334+theomund@users.noreply.github.com> - 0.1.0-1
