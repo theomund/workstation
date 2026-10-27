@@ -1,0 +1,56 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+ARG BASE
+ARG CHUNKAH_OUTPUT
+
+FROM ${BASE} AS rootfs
+COPY rootfs /
+RUN --mount=type=tmpfs,target=/var/cache \
+    --mount=type=tmpfs,target=/var/lib \
+    --mount=type=tmpfs,target=/var/log \
+    --mount=type=tmpfs,target=/run \
+     <<'EOF'
+set -eux
+
+dnf install -y \
+  almalinux-release-nvidia-driver-10 \
+  https://download1.rpmfusion.org/free/el/rpmfusion-free-release-10.noarch.rpm
+
+dnf group install -y -x PackageKit-command-not-found "Workstation"
+
+dnf install -y \
+  bcvk-0.10.0 \
+  cockpit-machines-348.1 \
+  code-1.143.1 \
+  ffmpeg-7.1.5 \
+  kmod-nvidia-open-615.71.10 \
+  nvidia-driver-615.71.10 \
+  nvidia-driver-cuda-615.71.10 \
+  thunderbird-153.5.0 \
+  tmux-3.3a
+
+dnf clean all
+
+systemctl preset-all
+EOF
+
+RUN bootc container lint --fatal-warnings
+
+FROM quay.io/coreos/chunkah@sha256:71e593421c5de7dcc7c8c5c50e98d3bac572055a76f399f61a491d123c20a523
+ARG CHUNKAH_CHOWN
+ARG CHUNKAH_CONFIG_STR
+RUN --mount=from=rootfs,target=/chunkah,ro \
+    <<'EOF'
+chunkah build \
+  --label ostree.commit- \
+  --label ostree.final-diffid- \
+  --max-layers 128 \
+  --output oci:/run/src/out \
+  --prune /sysroot/
+
+chown -R ${CHUNKAH_CHOWN} /run/src/out
+EOF
+
+FROM oci:${CHUNKAH_OUTPUT}

@@ -5,31 +5,26 @@
 ---
 version: "3"
 
-includes:
-  installer: &helper src/helper
-  payload: *helper
-
-dotenv: [".env"]
-
 run: when_changed
 
-env: {RELEASE: 1, VERSION: 0.3.1}
-
 vars:
+  G_VERSION: 0.4.0-1
+
   G_COMPONENTS: [installer, payload]
   G_NAME: workstation
   G_REGISTRY: ghcr.io/theomund/{{.G_NAME}}
-  G_SUFFIX: "{{.VERSION}}-{{.RELEASE}}"
 
-  G_PATH_FORMAT: target/%[1]s/%[2]s/{{.G_NAME}}-%[1]s-{{.G_SUFFIX}}%[3]s
-  G_TAG_FORMAT: "{{.G_REGISTRY}}/%s:{{.G_SUFFIX}}"
+  G_PATH_FORMAT: target/%[1]s/{{.G_NAME}}-%[1]s-{{.G_VERSION}}
+
+  G_TAG_FORMAT: "{{.G_REGISTRY}}/%s:{{.G_VERSION}}"
+  G_PAYLOAD: '{{printf .G_TAG_FORMAT "payload"}}'
 
 tasks:
   build:*:
     desc: Build an artifact type for all components.
     deps:
       - for: {var: G_COMPONENTS}
-        task: "{{.ITEM}}:{{index .MATCH 0}}"
+        task: "{{index .MATCH 0}}:{{.ITEM}}"
 
   ci:
     desc: Run CI/CD pipeline.
@@ -37,74 +32,122 @@ tasks:
 
   clean:
     desc: Clean the project.
-    cmd: git clean -fdxe '.env'
+    cmd: git clean -fdx
 
-  db:
-    desc: Update CVE database.
-    cmd: grype db update
+  container:*:
+    desc: Build a container.
+    vars: &vars
+      BASE: >-
+        quay.io/almalinuxorg/almalinux-bootc@sha256:2fc27d12a9f62fcf11d0ec034fc40d5df6602d383d035c57206220eda95db6b2
+      COMPONENT: '{{index .MATCH 0}}'
+      SOURCE: src/{{.COMPONENT}}
+      TARGET: target/{{.COMPONENT}}
+
+      TAG: "{{printf .G_TAG_FORMAT .COMPONENT}}"
+
+      PREFIX: '{{printf .G_PATH_FORMAT .COMPONENT}}'
+      CONTAINER: "{{.PREFIX}}-iid.txt"
+      CVE: "{{.PREFIX}}-cve.txt"
+      OCI: "{{.PREFIX}}-oci.tar"
+      SBOM: "{{.PREFIX}}-sbom.json"
+    sources: ["{{.SOURCE}}/**/*"]
+    generates: ["{{.CONTAINER}}"]
+    status: ["podman-remote image exists {{.TAG}}"]
+    cmds:
+      - mkdir -p "{{.TARGET}}"
+      - defer: rm -rf "{{.TARGET}}/out"
+      - podman-remote pull {{.BASE}}
+      - podman-remote build
+        {{if eq .COMPONENT "installer"}}
+        --build-arg TAG={{.G_PAYLOAD}}
+        {{end}}
+        {{if eq .COMPONENT "payload"}}
+        --build-arg CHUNKAH_CHOWN="$(id -u):$(id -g)"
+        --build-arg CHUNKAH_CONFIG_STR="$(podman-remote inspect {{.BASE}})"
+        --build-arg CHUNKAH_OUTPUT="$WORKSPACE_PATH/{{.TARGET}}/out"
+        --security-opt label=disable
+        --skip-unused-stages=false
+        -v "$WORKSPACE_PATH/{{.TARGET}}:/run/src"
+        {{end}}
+        --build-arg BASE={{.BASE}}
+        --iidfile "{{.CONTAINER}}"
+        -t {{.TAG}}
+        "{{.SOURCE}}"
+
+  cve:*:
+    desc: Build a CVE table.
+    vars: *vars
+    sources: ["{{.SBOM}}"]
+    generates: ["{{.CVE}}"]
+    deps: ["sbom:{{.COMPONENT}}"]
+    cmd: grype sbom:"{{.SBOM}}" -o table="{{.CVE}}"
 
   default:
     desc: Print project tasks.
     silent: true
     cmd: task -l
 
+  format:
+    desc: Format the source code.
+    cmd: shfmt -i 2 -ci -sr -bn -w .
+
   iso:
     desc: Build all ISO images.
     deps: [iso:install, iso:upgrade]
 
   iso:install:
-    desc: Build installation ISO image.
-    vars:
-      ISO: '{{printf .G_PATH_FORMAT "iso" "install" "-install.iso"}}'
-      ROOT: "{{dir .ISO}}/root"
-      STORAGE: /var/lib/containers/storage
+    desc: Build the installation ISO image.
+    vars: {ISO: '{{printf .G_PATH_FORMAT "iso"}}-install.iso'}
     sources:
-      - '{{printf .G_PATH_FORMAT "installer" "container" "-iid.txt"}}'
-      - '{{printf .G_PATH_FORMAT "payload" "container" "-iid.txt"}}'
+      - '{{printf .G_PATH_FORMAT "installer"}}-iid.txt'
+      - '{{printf .G_PATH_FORMAT "payload"}}-iid.txt'
     generates: ["{{.ISO}}"]
     deps: ["build:container"]
     cmds:
-      - mkdir -p "{{.ROOT}}"
-      - defer: rm -rf "{{.ROOT}}"
+      - mkdir -p "{{dir .ISO}}"
       - podman-remote run
         --privileged
         --rm
-        -v "{{.STORAGE}}:{{.STORAGE}}"
-        -v "$WORKSPACE_PATH/{{.ROOT}}:/output"
-        ghcr.io/osbuild/image-builder@sha256:894c6eabff8a18d5cd20ac6da869bf013c0a11bca49087205527921ac035ed2f
+        -v /var/lib/containers/storage:/var/lib/containers/storage
+        -v "$WORKSPACE_PATH/{{dir .ISO}}:/output"
+        ghcr.io/osbuild/image-builder@sha256:df3f4e525945c868d8014b859cd4f1d2efd8d749e40d8e3b9b9e6a05ca3b95b0
         build
-        --bootc-installer-payload-ref {{printf .G_TAG_FORMAT "payload"}}
+        --bootc-installer-payload-ref {{.G_PAYLOAD}}
         --bootc-ref {{printf .G_TAG_FORMAT "installer"}}
         --output-dir "/output"
+        --output-name {{base .ISO}}
         bootc-generic-iso
-      - mv "{{.ROOT}}"/*.iso "{{.ISO}}"
 
   iso:upgrade:
-    desc: Build upgrade ISO image.
+    desc: Build the upgrade ISO image.
     vars:
-      ISO: '{{printf .G_PATH_FORMAT "iso" "upgrade" "-upgrade.iso"}}'
-      PAYLOAD: '{{printf .G_PATH_FORMAT "payload" "oci" "-oci.tar"}}'
-      SOURCE: src/iso
-    sources: ["{{.PAYLOAD}}", "{{.SOURCE}}/upgrade.sh"]
+      ISO: '{{printf .G_PATH_FORMAT "iso"}}-upgrade.iso'
+      ARCHIVE: '{{printf .G_PATH_FORMAT "payload"}}-oci.tar'
+      SCRIPT: src/iso/upgrade.sh
+    sources: ["{{.ARCHIVE}}", "{{.SCRIPT}}"]
     generates: ["{{.ISO}}"]
-    deps: ["payload:oci"]
+    deps: ["container:payload"]
     cmds:
       - mkdir -p "{{dir .ISO}}"
-      - mkisofs -R -J -o "{{.ISO}}" "{{.SOURCE}}" "{{.PAYLOAD}}"
+      - podman-remote save --format oci-archive -o "{{.ARCHIVE}}" {{.G_PAYLOAD}}
+      - mkisofs
+        -R
+        -J
+        -o "{{.ISO}}"
+        "{{.ARCHIVE}}"
+        "{{.SCRIPT}}"
 
   lint:
     desc: Lint the source code.
-    deps: [lint:rpmlint, lint:shellcheck, lint:yamllint]
+    cmds:
+      - rg --files --glob "Containerfile" --hidden | xargs hadolint
+      - rg --files --type sh | xargs shellcheck
+      - yamllint "."
 
-  lint:rpmlint:
-    desc: Lint the RPM packages.
-    deps: [build:rpm]
-    cmd: rpmlint "target/"*"/rpm/"*".src.rpm"
-
-  lint:shellcheck:
-    desc: Lint the shell scripts.
-    cmd: shellcheck "src/iso/upgrade.sh"
-
-  lint:yamllint:
-    desc: Lint the YAML files.
-    cmd: yamllint "."
+  sbom:*:
+    desc: Build a SBOM file.
+    vars: *vars
+    sources: ["{{.CONTAINER}}"]
+    generates: ["{{.SBOM}}"]
+    deps: ["container:{{.COMPONENT}}"]
+    cmd: syft podman:{{.TAG}} -o syft-json="{{.SBOM}}"
