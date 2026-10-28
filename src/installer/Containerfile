@@ -5,30 +5,28 @@
 ARG BASE
 
 FROM ${BASE}
-ARG TAG
-COPY rootfs /
 RUN --mount=type=tmpfs,target=/var/cache \
+    --mount=type=cache,target=/var/cache/dnf,id=dnf-installer \
     --mount=type=tmpfs,target=/var/lib \
     --mount=type=tmpfs,target=/var/log \
     --mount=type=tmpfs,target=/run \
-    <<'EOF'
+    dnf install -y --setopt=keepcache=1 \
+      anaconda-dracut-40.22.3.46 \
+      anaconda-install-img-deps-40.22.3.46 \
+      fuse-overlayfs-1.16 \
+      grub2-efi-x64-cdboot-2.12 \
+      squashfs-tools-4.6.1 \
+      xorriso-1.5.6
+COPY rootfs /
+ARG TAG
+RUN <<EOF
 set -eux
-
-dnf install -y \
-  anaconda-dracut-40.22.3.46 \
-  anaconda-install-img-deps-40.22.3.46 \
-  fuse-overlayfs-1.16 \
-  grub2-efi-x64-cdboot-2.12 \
-  squashfs-tools-4.6.1 \
-  xorriso-1.5.6
-
-dnf clean all
-
-cp -a /usr/lib/bootupd/updates/EFI /boot/efi/
 
 kver=$(basename /usr/lib/modules/*)
 sed -i "s|@TAG@|${TAG}|g" /usr/share/anaconda/workstation-installer.ks
 dracut -f -v -a anaconda -I /usr/share/anaconda/workstation-installer.ks "/usr/lib/modules/${kver}/initramfs.img" "${kver}"
-EOF
 
-RUN bootc container lint --fatal-warnings --skip nonempty-boot
+systemd-tmpfiles --create /usr/lib/tmpfiles.d/workstation-installer.conf
+
+bootc container lint --fatal-warnings --skip nonempty-boot
+EOF
