@@ -30,12 +30,10 @@ jobs:
       - name: Run Development Container
         uses: devcontainers/ci@513af61f4de4f75d37e4438f184ba4358f0fc1ca
         with:
+          cacheFrom: ghcr.io/theomund/workstation/devcontainer
           imageName: ghcr.io/theomund/workstation/devcontainer
+          push: ${{ github.event_name == 'push' && 'always' || 'never' }}
           runCmd: task ci
-      - name: Upload Install ISO
-        uses: &upload
-          actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
-        with: {archive: false, path: target/iso/*-install.iso}
-      - name: Upload Upgrade ISO
-        uses: *upload
-        with: {archive: false, path: target/iso/*-upgrade.iso}
+      - name: Upload ISO
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with: {archive: false, path: target/iso/*.iso}
