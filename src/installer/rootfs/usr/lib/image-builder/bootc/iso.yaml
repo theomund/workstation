@@ -10,9 +10,9 @@ grub2:
       linux: >-
         /images/pxeboot/vmlinuz
         console=tty0
+        enforcing=0
         inst.ks=file:/usr/share/anaconda/workstation-installer.ks
         inst.stage2=hd:LABEL=Workstation-Installer
-        selinux=0
         systemd.gpt_auto=0
         systemd.unit=anaconda.target
       initrd: /images/pxeboot/initrd.img
