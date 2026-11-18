@@ -10,13 +10,21 @@ RUN --mount=type=tmpfs,target=/var/cache \
     --mount=type=tmpfs,target=/var/lib \
     --mount=type=tmpfs,target=/var/log \
     --mount=type=tmpfs,target=/run \
-    dnf install -y --setopt=keepcache=1 \
-      anaconda-dracut-40.22.3.46 \
-      anaconda-install-img-deps-40.22.3.46 \
-      fuse-overlayfs-1.16 \
-      grub2-efi-x64-cdboot-2.12 \
-      squashfs-tools-4.6.1 \
-      xorriso-1.5.6
+    <<EOF
+set -eux
+
+dnf install -y --setopt=keepcache=1 \
+  anaconda-dracut-40.22.3.57 \
+  anaconda-install-img-deps-40.22.3.57 \
+  anaconda-tui-40.22.3.57 \
+  dracut-config-generic-107 \
+  fuse-overlayfs-1.17 \
+  grub2-efi-x64-cdboot-2.12 \
+  squashfs-tools-4.6.1 \
+  xorriso-1.5.6
+
+cp -a /usr/lib/bootupd/updates/EFI /boot/efi/
+EOF
 COPY rootfs /
 ARG TAG
 RUN <<EOF
@@ -24,9 +32,7 @@ set -eux
 
 kver=$(basename /usr/lib/modules/*)
 sed -i "s|@TAG@|${TAG}|g" /usr/share/anaconda/workstation-installer.ks
-dracut -f -v -a anaconda -I /usr/share/anaconda/workstation-installer.ks "/usr/lib/modules/${kver}/initramfs.img" "${kver}"
-
-systemd-tmpfiles --create /usr/lib/tmpfiles.d/workstation-installer.conf
+dracut -fva anaconda -I /usr/share/anaconda/workstation-installer.ks "/usr/lib/modules/${kver}/initramfs.img" "${kver}"
 
 bootc container lint --fatal-warnings --skip nonempty-boot
 EOF

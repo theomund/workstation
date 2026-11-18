@@ -7,7 +7,8 @@ ARG CHUNKAH_OUTPUT
 
 FROM ${BASE} AS rootfs
 COPY rootfs/etc/yum.repos.d /etc/yum.repos.d
-RUN --mount=type=tmpfs,target=/var/cache \
+RUN --mount=type=tmpfs,target=/boot \
+    --mount=type=tmpfs,target=/var/cache \
     --mount=type=cache,target=/var/cache/dnf,id=dnf-payload \
     --mount=type=tmpfs,target=/var/lib \
     --mount=type=tmpfs,target=/var/log \
@@ -19,17 +20,16 @@ dnf install -y --setopt=keepcache=1 \
   almalinux-release-nvidia-driver-10 \
   https://download1.rpmfusion.org/free/el/rpmfusion-free-release-10.noarch.rpm
 
-dnf install -y --setopt=keepcache=1 -x PackageKit-command-not-found \
+dnf install -y --setopt=keepcache=1 -x fuse-overlayfs PackageKit-command-not-found \
   @workstation-product-environment \
   bcvk-0.10.0 \
-  cockpit-machines-348.1 \
-  code-1.144.0 \
+  cockpit-machines-355 \
+  code-1.146.0 \
   ffmpeg-7.1.5 \
-  kmod-nvidia-open-615.71.10 \
-  nvidia-driver-615.71.10 \
-  nvidia-driver-cuda-615.71.10 \
-  thunderbird-153.5.0 \
-  tmux-3.3a
+  kmod-nvidia-open-620.70.06 \
+  nvidia-driver-620.70.06 \
+  nvidia-driver-cuda-620.70.06 \
+  thunderbird-153.6.0
 EOF
 COPY rootfs /
 RUN <<EOF
@@ -42,23 +42,20 @@ EOF
 FROM quay.io/coreos/chunkah@sha256:71e593421c5de7dcc7c8c5c50e98d3bac572055a76f399f61a491d123c20a523
 ARG CHUNKAH_CHOWN
 ARG CHUNKAH_CONFIG_STR
-ARG CHUNKAH_OUTPUT
 RUN --mount=from=rootfs,target=/chunkah,ro \
     <<EOF
 set -eux
 
-OUTPUT=/run/src/$(basename ${CHUNKAH_OUTPUT})
-
-rm -rf ${OUTPUT}
+rm -rf /run/src/oci
 
 chunkah build \
   --label ostree.commit- \
   --label ostree.final-diffid- \
   --max-layers 128 \
-  --output oci:${OUTPUT} \
+  --output oci:/run/src/oci \
   --prune /sysroot/
 
-chown -R ${CHUNKAH_CHOWN} ${OUTPUT}
+chown -R ${CHUNKAH_CHOWN} /run/src/oci
 EOF
 
 FROM oci:${CHUNKAH_OUTPUT}
