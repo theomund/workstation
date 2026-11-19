@@ -9,7 +9,6 @@ grub2:
     - name: Install Workstation
       linux: >-
         /images/pxeboot/vmlinuz
-        console=tty0
         enforcing=0
         inst.ks=file:/usr/share/anaconda/workstation-installer.ks
         inst.stage2=hd:LABEL=Workstation-Installer

@@ -4,7 +4,6 @@
 
 ---
 name: linux
-run-name: Linux Build
 "on":
   push: {branches: [main]}
   pull_request: {branches: [main]}
@@ -15,7 +14,6 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-        with: {persist-credentials: false}
       - name: Login to Container Registry
         if: github.event_name == 'push'
         uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6
@@ -30,9 +28,7 @@ jobs:
       - name: Run Development Container
         uses: devcontainers/ci@513af61f4de4f75d37e4438f184ba4358f0fc1ca
         with:
-          cacheFrom: ghcr.io/theomund/workstation/devcontainer
           imageName: ghcr.io/theomund/workstation/devcontainer
-          push: ${{ github.event_name == 'push' && 'always' || 'never' }}
           runCmd: task ci
       - name: Upload ISO
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9

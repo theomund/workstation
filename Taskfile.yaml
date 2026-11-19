@@ -9,10 +9,10 @@ run: when_changed
 
 vars:
   G_BASE: >-
-    quay.io/almalinuxorg/almalinux-bootc@sha256:0a036afe9ddfb987f2b5c428242ebeaf5c74d4279122f4ccf45dc7c38fe55c73
+    quay.io/almalinuxorg/almalinux-bootc@sha256:c9cf2e865a24db3294e4983d4041af7436a55a2561a3bafa5b54c8bd01443cb8
   G_NAME: workstation
   G_REGISTRY: ghcr.io/theomund/{{.G_NAME}}
-  G_VERSION: 0.4.1
+  G_VERSION: 0.5.0
   G_PAYLOAD: "{{.G_REGISTRY}}/payload:{{.G_VERSION}}"
 
 tasks:
@@ -76,7 +76,7 @@ tasks:
         --rm
         -v /var/lib/containers/storage:/var/lib/containers/storage
         -v "$WORKSPACE_PATH/{{dir .ISO}}:/output"
-        ghcr.io/osbuild/image-builder@sha256:df3f4e525945c868d8014b859cd4f1d2efd8d749e40d8e3b9b9e6a05ca3b95b0
+        ghcr.io/osbuild/image-builder@sha256:f33fa06204ab382eed24979bc99e880b221fbded5a369a0f40ded881d649d392
         build
         --bootc-installer-payload-ref {{.G_PAYLOAD}}
         --bootc-ref {{.G_REGISTRY}}/installer:{{.G_VERSION}}
