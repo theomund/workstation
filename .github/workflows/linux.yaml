@@ -28,6 +28,9 @@ jobs:
       - name: Run Development Container
         uses: devcontainers/ci@513af61f4de4f75d37e4438f184ba4358f0fc1ca
         with:
+          env: |
+            REGISTRY_USER=${{ github.actor }}
+            REGISTRY_PASSWORD=${{ secrets.GITHUB_TOKEN }}
           imageName: ghcr.io/theomund/workstation/devcontainer
           runCmd: task ci
       - name: Upload ISO
