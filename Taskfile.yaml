@@ -5,38 +5,41 @@
 ---
 version: "3"
 
+dotenv: [".env"]
+
 run: when_changed
 
 vars:
   G_BASE: >-
-    quay.io/almalinuxorg/almalinux-bootc@sha256:c9cf2e865a24db3294e4983d4041af7436a55a2561a3bafa5b54c8bd01443cb8
+    quay.io/almalinuxorg/almalinux-bootc@sha256:c02700e75fdffaa98c6f3a9994a27effb85a041f80f5dc3ad3bb9dacfca426af
   G_NAME: workstation
-  G_REGISTRY: ghcr.io/theomund/{{.G_NAME}}
-  G_VERSION: 0.5.0
-  G_PAYLOAD: "{{.G_REGISTRY}}/payload:{{.G_VERSION}}"
+  G_REGISTRY: ghcr.io
+  G_NAMESPACE: "{{.G_REGISTRY}}/theomund/{{.G_NAME}}"
+  G_VERSION: 0.6.0
+  G_PAYLOAD: "{{.G_NAMESPACE}}/payload:{{.G_VERSION}}"
 
 tasks:
   ci:
     desc: Run CI/CD pipeline.
-    deps: [lint, iso]
+    deps: [iso, push]
 
   clean:
     desc: Clean the project.
-    cmd: git clean -fdx
+    cmd: git clean -fdxe ".env"
 
   container:*:
     desc: Build a container.
     vars:
       COMPONENT: "{{index .MATCH 0}}"
       SOURCE: src/{{.COMPONENT}}
-      TAG: "{{.G_REGISTRY}}/{{.COMPONENT}}:{{.G_VERSION}}"
+      TAG: "{{.G_NAMESPACE}}/{{.COMPONENT}}:{{.G_VERSION}}"
 
       TARGET: target/{{.COMPONENT}}
       CONTAINER: "{{.TARGET}}/iid.txt"
       OCI: "{{.TARGET}}/oci"
     sources: ["{{.SOURCE}}/**/*", Taskfile.yaml]
     generates: ["{{.CONTAINER}}"]
-    deps: [pull]
+    deps: [lint, pull]
     cmds:
       - mkdir -p "{{.TARGET}}"
       - podman-remote build
@@ -63,10 +66,9 @@ tasks:
 
   iso:
     desc: Build the ISO image.
-    vars: {ISO: "target/iso/{{.G_NAME}}-{{.G_VERSION}}.iso"}
-    sources:
-      - target/installer/iid.txt
-      - target/payload/iid.txt
+    vars:
+      ISO: target/iso/{{.G_NAME}}-{{.G_VERSION}}.iso
+    sources: [target/installer/iid.txt, target/payload/iid.txt]
     generates: ["{{.ISO}}"]
     deps: [container:installer, container:payload]
     cmds:
@@ -79,7 +81,7 @@ tasks:
         ghcr.io/osbuild/image-builder@sha256:f33fa06204ab382eed24979bc99e880b221fbded5a369a0f40ded881d649d392
         build
         --bootc-installer-payload-ref {{.G_PAYLOAD}}
-        --bootc-ref {{.G_REGISTRY}}/installer:{{.G_VERSION}}
+        --bootc-ref {{.G_NAMESPACE}}/installer:{{.G_VERSION}}
         --output-dir "/output"
         --output-name {{base .ISO}}
         bootc-generic-iso
@@ -87,6 +89,19 @@ tasks:
   lint:
     desc: Lint the source code.
     cmd: yamllint "."
+
+  login:
+    desc: Login to the container registry.
+    status: ["podman-remote login --get-login {{.G_REGISTRY}}"]
+    cmd: podman-remote login
+         -u $REGISTRY_USER
+         -p $REGISTRY_PASSWORD
+         {{.G_REGISTRY}}
+
+  push:
+    desc: Push the payload image.
+    deps: [container:payload, login]
+    cmd: podman-remote push {{.G_PAYLOAD}}
 
   pull:
     desc: Pull the base image.

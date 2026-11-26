@@ -16,7 +16,7 @@ dnf install -y --setopt=keepcache=1 \
   bash-completion-2.11 \
   git-2.52.0 \
   https://github.com/go-task/task/releases/download/v3.54.0/task_3.54.0_linux_amd64.rpm \
-  podman-remote-6.1.1 \
+  podman-remote-6.1.4 \
   tree-2.1.0 \
   yamllint-1.37.1
 

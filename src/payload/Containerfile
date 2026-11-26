@@ -20,16 +20,15 @@ dnf install -y --setopt=keepcache=1 \
   almalinux-release-nvidia-driver-10 \
   https://download1.rpmfusion.org/free/el/rpmfusion-free-release-10.noarch.rpm
 
-dnf install -y --setopt=keepcache=1 -x fuse-overlayfs PackageKit-command-not-found \
+dnf install -y --exclude=firefox,PackageKit-command-not-found --setopt=keepcache=1 \
   @workstation-product-environment \
-  bcvk-0.10.0 \
-  cockpit-machines-355 \
-  code-1.146.0 \
+  bcvk-0.22.0 \
+  cockpit-machines-355.1 \
+  code-1.147.0 \
   ffmpeg-7.1.5 \
   kmod-nvidia-open-620.70.06 \
   nvidia-driver-620.70.06 \
-  nvidia-driver-cuda-620.70.06 \
-  thunderbird-153.6.0
+  nvidia-driver-cuda-620.70.06
 EOF
 COPY rootfs /
 RUN <<EOF
