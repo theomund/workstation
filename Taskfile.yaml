@@ -10,12 +10,11 @@ dotenv: [".env"]
 run: when_changed
 
 vars:
-  G_BASE: >-
-    quay.io/almalinuxorg/almalinux-bootc@sha256:c02700e75fdffaa98c6f3a9994a27effb85a041f80f5dc3ad3bb9dacfca426af
+  G_BASE: quay.io/almalinuxorg/almalinux-bootc@sha256:c02700e75fdffaa98c6f3a9994a27effb85a041f80f5dc3ad3bb9dacfca426af
   G_NAME: workstation
   G_REGISTRY: ghcr.io
   G_NAMESPACE: "{{.G_REGISTRY}}/theomund/{{.G_NAME}}"
-  G_VERSION: 0.6.0
+  G_VERSION: 0.7.0
   G_PAYLOAD: "{{.G_NAMESPACE}}/payload:{{.G_VERSION}}"
 
 tasks:
@@ -54,7 +53,6 @@ tasks:
         --skip-unused-stages=false
         -v "$WORKSPACE_PATH/{{.TARGET}}:/run/src"
         {{end}}
-        --build-arg BASE={{.G_BASE}}
         --iidfile "{{.CONTAINER}}"
         -t {{.TAG}}
         "{{.SOURCE}}"
@@ -107,3 +105,7 @@ tasks:
     desc: Pull the base image.
     status: ["podman-remote image exists {{.G_BASE}}"]
     cmd: podman-remote pull {{.G_BASE}}
+
+  update:
+    desc: Update the project dependencies.
+    cmd: renovate --platform=local --dry-run=extract
