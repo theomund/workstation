@@ -16,9 +16,16 @@ dnf install -y --setopt=keepcache=1 \
   bash-completion-2.11 \
   git-2.52.0 \
   https://github.com/go-task/task/releases/download/v3.54.0/task_3.54.0_linux_amd64.rpm \
+  nodejs24-npm-11.19.1 \
   podman-remote-6.1.4 \
   tree-2.1.0 \
   yamllint-1.37.1
+
+alternatives --install /usr/bin/node node /usr/bin/node-24 24 \
+  --slave /usr/bin/npm npm /usr/bin/npm-24 \
+  --slave /usr/bin/npx npx /usr/bin/npx-24
+
+npm install -g renovate@44.264.1
 
 useradd -m developer
 EOF

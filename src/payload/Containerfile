@@ -2,10 +2,9 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-ARG BASE
 ARG CHUNKAH_OUTPUT
 
-FROM ${BASE} AS rootfs
+FROM quay.io/almalinuxorg/almalinux-bootc@sha256:c02700e75fdffaa98c6f3a9994a27effb85a041f80f5dc3ad3bb9dacfca426af AS rootfs
 COPY rootfs/etc/yum.repos.d /etc/yum.repos.d
 RUN --mount=type=tmpfs,target=/boot \
     --mount=type=tmpfs,target=/var/cache \
@@ -23,8 +22,8 @@ dnf install -y --setopt=keepcache=1 \
 dnf install -y --exclude=firefox,PackageKit-command-not-found --setopt=keepcache=1 \
   @workstation-product-environment \
   bcvk-0.22.0 \
-  cockpit-machines-355.1 \
-  code-1.147.0 \
+  cockpit-machines-355.2 \
+  code-1.148.0 \
   ffmpeg-7.1.5 \
   kmod-nvidia-open-620.70.06 \
   nvidia-driver-620.70.06 \
