@@ -10,11 +10,12 @@ dotenv: [".env"]
 run: when_changed
 
 vars:
-  G_BASE: quay.io/almalinuxorg/almalinux-bootc@sha256:c02700e75fdffaa98c6f3a9994a27effb85a041f80f5dc3ad3bb9dacfca426af
+  G_BASE: >-
+    quay.io/almalinuxorg/almalinux-bootc:10@sha256:845ed9da37bd39776fd8be377b23046d614160a81c8a577255d07a983f73068e
   G_NAME: workstation
   G_REGISTRY: ghcr.io
   G_NAMESPACE: "{{.G_REGISTRY}}/theomund/{{.G_NAME}}"
-  G_VERSION: 0.7.0
+  G_VERSION: 0.8.0
   G_PAYLOAD: "{{.G_NAMESPACE}}/payload:{{.G_VERSION}}"
 
 tasks:
@@ -30,30 +31,24 @@ tasks:
     desc: Build a container.
     vars:
       COMPONENT: "{{index .MATCH 0}}"
+      IID: "target/{{.COMPONENT}}/iid.txt"
       SOURCE: src/{{.COMPONENT}}
       TAG: "{{.G_NAMESPACE}}/{{.COMPONENT}}:{{.G_VERSION}}"
-
-      TARGET: target/{{.COMPONENT}}
-      CONTAINER: "{{.TARGET}}/iid.txt"
-      OCI: "{{.TARGET}}/oci"
     sources: ["{{.SOURCE}}/**/*", Taskfile.yaml]
-    generates: ["{{.CONTAINER}}"]
+    generates: ["{{.IID}}"]
     deps: [lint, pull]
     cmds:
-      - mkdir -p "{{.TARGET}}"
-      - podman-remote build
+      - mkdir -p "{{dir .IID}}"
+      - sudo podman build
         {{if eq .COMPONENT "installer"}}
         --build-arg TAG={{.G_PAYLOAD}}
         {{end}}
         {{if eq .COMPONENT "payload"}}
-        --build-arg CHUNKAH_CHOWN="$(id -u):$(id -g)"
-        --build-arg CHUNKAH_CONFIG_STR="$(podman-remote inspect {{.G_BASE}})"
-        --build-arg CHUNKAH_OUTPUT="$WORKSPACE_PATH/{{.OCI}}"
-        --security-opt label=disable
+        --build-arg CHUNKAH_CONFIG_STR="$(sudo podman inspect {{.G_BASE}})"
         --skip-unused-stages=false
-        -v "$WORKSPACE_PATH/{{.TARGET}}:/run/src"
         {{end}}
-        --iidfile "{{.CONTAINER}}"
+        --build-arg BASE={{.G_BASE}}
+        --iidfile "{{.IID}}"
         -t {{.TAG}}
         "{{.SOURCE}}"
 
@@ -65,22 +60,19 @@ tasks:
   iso:
     desc: Build the ISO image.
     vars:
-      ISO: target/iso/{{.G_NAME}}-{{.G_VERSION}}.iso
+      ISO: target/iso/{{.G_NAME}}-v{{.G_VERSION}}.iso
     sources: [target/installer/iid.txt, target/payload/iid.txt]
     generates: ["{{.ISO}}"]
     deps: [container:installer, container:payload]
     cmds:
       - mkdir -p "{{dir .ISO}}"
-      - podman-remote run
-        --privileged
-        --rm
-        -v /var/lib/containers/storage:/var/lib/containers/storage
-        -v "$WORKSPACE_PATH/{{dir .ISO}}:/output"
-        ghcr.io/osbuild/image-builder@sha256:f33fa06204ab382eed24979bc99e880b221fbded5a369a0f40ded881d649d392
-        build
+      - sudo unshare
+        --mount
+        --propagation private
+        image-builder build
         --bootc-installer-payload-ref {{.G_PAYLOAD}}
         --bootc-ref {{.G_NAMESPACE}}/installer:{{.G_VERSION}}
-        --output-dir "/output"
+        --output-dir {{dir .ISO}}
         --output-name {{base .ISO}}
         bootc-generic-iso
 
@@ -90,8 +82,8 @@ tasks:
 
   login:
     desc: Login to the container registry.
-    status: ["podman-remote login --get-login {{.G_REGISTRY}}"]
-    cmd: podman-remote login
+    status: ["sudo podman login --get-login {{.G_REGISTRY}}"]
+    cmd: sudo podman login
          -u $REGISTRY_USER
          -p $REGISTRY_PASSWORD
          {{.G_REGISTRY}}
@@ -99,13 +91,15 @@ tasks:
   push:
     desc: Push the payload image.
     deps: [container:payload, login]
-    cmd: podman-remote push {{.G_PAYLOAD}}
+    cmd: sudo podman push {{.G_PAYLOAD}}
 
   pull:
     desc: Pull the base image.
-    status: ["podman-remote image exists {{.G_BASE}}"]
-    cmd: podman-remote pull {{.G_BASE}}
+    status: ["sudo podman image exists {{.G_BASE}}"]
+    cmd: sudo podman pull {{.G_BASE}}
 
   update:
     desc: Update the project dependencies.
-    cmd: renovate --platform=local --dry-run=extract
+    env:
+      LOG_LEVEL: debug
+    cmd: renovate --platform=local
