@@ -2,10 +2,9 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-FROM quay.io/almalinuxorg/almalinux@sha256:498b0b31dab82c3be22ac50efb8bf865adce85576495da20de8cedc48b29eec6
-ENV CONTAINER_HOST=unix:///run/podman/podman.sock
-RUN --mount=type=tmpfs,target=/var/cache \
-    --mount=type=cache,target=/var/cache/dnf,id=dnf-devcontainer \
+FROM quay.io/almalinuxorg/almalinux:10@sha256:498b0b31dab82c3be22ac50efb8bf865adce85576495da20de8cedc48b29eec6
+RUN --mount=type=cache,target=/var/cache/dnf,id=dnf-devcontainer \
+    --mount=type=tmpfs,target=/var/cache \
     --mount=type=tmpfs,target=/var/log \
     <<EOF
 set -eux
@@ -16,17 +15,24 @@ dnf install -y --setopt=keepcache=1 \
   bash-completion-2.11 \
   git-2.52.0 \
   https://github.com/go-task/task/releases/download/v3.54.0/task_3.54.0_linux_amd64.rpm \
+  image-builder-79.0.0 \
   nodejs24-npm-11.19.1 \
-  podman-remote-6.1.4 \
+  sudo-1.9.17 \
   tree-2.1.0 \
   yamllint-1.37.1
 
-alternatives --install /usr/bin/node node /usr/bin/node-24 24 \
+alternatives \
+  --install /usr/bin/node node /usr/bin/node-24 24 \
   --slave /usr/bin/npm npm /usr/bin/npm-24 \
   --slave /usr/bin/npx npx /usr/bin/npx-24
 
 npm install -g renovate@44.264.1
 
-useradd -m developer
+useradd -mG wheel developer
 EOF
 USER developer
+ENV BUILDAH_ISOLATION=chroot
+VOLUME /var/cache/image-builder/store
+VOLUME /var/lib/containers
+VOLUME /var/tmp
+COPY rootfs /

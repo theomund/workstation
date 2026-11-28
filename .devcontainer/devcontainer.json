@@ -10,14 +10,16 @@
     "cacheFrom": "ghcr.io/theomund/workstation/devcontainer",
     "dockerfile": "Containerfile"
   },
-  "containerEnv": {"WORKSPACE_PATH": "${localWorkspaceFolder}"},
   "customizations": {
     "vscode": {
-      "extensions": ["ms-azuretools.vscode-containers", "task.vscode-task"]
+      "extensions": [
+        "ms-azuretools.vscode-containers",
+        "task.vscode-task"
+      ]
     }
   },
-  "initializeCommand": "sudo systemctl start podman.socket && sudo chown -R $(id -u):$(id -g) /run/podman",
-  "mounts": [
-    "source=/run/podman/podman.sock,target=/run/podman/podman.sock,type=bind"
+  "privileged": true,
+  "runArgs": [
+    "--userns="
   ]
 }

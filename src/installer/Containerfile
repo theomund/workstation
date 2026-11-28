@@ -2,9 +2,11 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-FROM quay.io/almalinuxorg/almalinux-bootc@sha256:c02700e75fdffaa98c6f3a9994a27effb85a041f80f5dc3ad3bb9dacfca426af
-RUN --mount=type=tmpfs,target=/var/cache \
-    --mount=type=cache,target=/var/cache/dnf,id=dnf-installer \
+ARG BASE
+
+FROM ${BASE}
+RUN --mount=type=cache,target=/var/cache/dnf,id=dnf-installer \
+    --mount=type=tmpfs,target=/var/cache \
     --mount=type=tmpfs,target=/var/lib \
     --mount=type=tmpfs,target=/var/log \
     --mount=type=tmpfs,target=/run \
